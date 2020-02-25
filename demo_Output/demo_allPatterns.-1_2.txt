@@ -1,0 +1,15 @@
+LOCATION of the ohl->2
+lw PERSON->2
+PERSON to LOCATION->3
+president PERSON->2
+LOCATION , LOCATION , LOCATION->5
+mr. PERSON say->2
+LOCATION , LOCATION->23
+PERSON of LOCATION->3
+executive , PERSON->4
+history , ORGANIZATION->2
+PERSON say->4
+LOCATION , n.y.->4
+prince PERSON->2
+ORGANIZATION chief executive->2
+mr. PERSON->4

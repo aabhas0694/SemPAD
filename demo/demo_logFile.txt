@@ -1,0 +1,30 @@
+Feb 25, 2020 12:58:46 PM cpww.CPWW buildDictionary
+INFO: STARTING: Dictionary Building
+Feb 25, 2020 12:58:49 PM cpww.CPWW buildDictionary
+INFO: COMPLETED: Dictionary Building
+Feb 25, 2020 12:58:49 PM cpww.CPWW buildSentences
+INFO: STARTING: Sentences Processing
+Feb 25, 2020 12:59:12 PM cpww.CPWW buildSentences
+INFO: COMPLETED: Sentences Processing
+Feb 25, 2020 12:59:12 PM cpww.CPWW saveSentenceBreakdown
+INFO: STARTING: Sentence Breakdown Serialization
+Feb 25, 2020 12:59:27 PM cpww.CPWW saveSentenceBreakdown
+INFO: COMPLETED: Sentence Breakdown Serialization
+Feb 25, 2020 12:59:27 PM cpww.CPWW call
+INFO: STARTING: Iterative Frequent Pattern Mining and Hierarchical Pushups
+Feb 25, 2020 12:59:27 PM cpww.CPWW frequent_pattern_mining
+INFO: COMPLETED: Frequent Pattern Mining - Iteration 1
+Feb 25, 2020 12:59:27 PM cpww.CPWW call
+INFO: STARTING: Hierarchical PushUps - Iteration 1
+Feb 25, 2020 12:59:27 PM cpww.CPWW call
+INFO: COMPLETED: Hierarchical PushUps - Iteration 1
+Feb 25, 2020 12:59:28 PM cpww.CPWW frequent_pattern_mining
+INFO: COMPLETED: Frequent Pattern Mining - Iteration 2
+Feb 25, 2020 12:59:28 PM cpww.CPWW savePatternClassificationData
+INFO: STARTING: Saving Meta-Pattern Classification Data
+Feb 25, 2020 12:59:28 PM cpww.CPWW savePatternClassificationData
+INFO: COMPLETED: Saving Meta-Pattern Classification Data
+Feb 25, 2020 12:59:28 PM cpww.CPWW call
+INFO: STARTING: Pattern Matching
+Feb 25, 2020 12:59:28 PM cpww.CPWW call
+INFO: COMPLETED: Pattern Matching
