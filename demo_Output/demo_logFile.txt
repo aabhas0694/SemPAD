@@ -1,0 +1,14 @@
+Mar 15, 2020 1:18:00 AM cpww.CPWW loadSentenceBreakdown
+INFO: STARTING: Sentence Breakdown Deserialization
+Mar 15, 2020 1:18:01 AM cpww.CPWW loadSentenceBreakdown
+INFO: COMPLETED: Sentence Breakdown Deserialization
+Mar 15, 2020 1:18:01 AM cpww.CPWW loadPatternClassificationData
+INFO: STARTING: Loading Meta-Pattern Classification Data
+Mar 15, 2020 1:18:01 AM cpww.CPWW loadPatternClassificationData
+INFO: STARTING: Loading Meta-Pattern Classification Data
+Mar 15, 2020 1:18:01 AM cpww.CPWW call
+INFO: COMPLETED: Loading Meta-Pattern Classification Data
+Mar 15, 2020 1:18:01 AM cpww.CPWW call
+INFO: STARTING: Pattern Matching
+Mar 15, 2020 1:18:01 AM cpww.CPWW call
+INFO: COMPLETED: Pattern Matching

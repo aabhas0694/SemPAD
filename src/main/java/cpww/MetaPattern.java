@@ -1,6 +1,7 @@
 package cpww;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MetaPattern {
     private String metaPattern;
@@ -65,19 +66,23 @@ public class MetaPattern {
             this.clippedMetaPattern = null;
             return;
         }
-        String[] splitPattern = this.metaPattern.split(" ");
-        int startIndex = 0, endIndex = splitPattern.length - 1;
+
+        List<String> splitPattern = Arrays.asList(this.metaPattern.split(" ")).stream().
+                filter(word -> !word.matches("[`'\\.,:;\\!\\-\\|\"]+|\\-lrb\\-|\\-lsb\\-|\\-rrb\\-|\\-rsb\\-"))
+                .collect(Collectors.toList());
+
+        int startIndex = 0, endIndex = splitPattern.size() - 1;
         boolean foundStart = false, foundEnd = false;
         while (startIndex < endIndex && (!foundStart || !foundEnd)) {
             if (!foundStart) {
-                if (!stopWords.contains(splitPattern[startIndex])) {
+                if (!stopWords.contains(splitPattern.get(startIndex))) {
                     foundStart = true;
                 } else {
                     startIndex++;
                 }
             }
             if (!foundEnd) {
-                if (!stopWords.contains(splitPattern[endIndex])) {
+                if (!stopWords.contains(splitPattern.get(endIndex))) {
                     foundEnd = true;
                 } else {
                     endIndex--;
@@ -90,8 +95,8 @@ public class MetaPattern {
             this.clippedMetaPattern = null;
             return;
         }
-        this.clippedMetaPattern = String.join(" ", Arrays.asList(splitPattern).subList(startIndex, endIndex + 1));
-        if (this.nerCount > 1 && this.checkConjunction(this.clippedMetaPattern)) {
+        this.clippedMetaPattern = String.join(" ", splitPattern.subList(startIndex, endIndex + 1));
+        if (this.checkConjunction(this.clippedMetaPattern)) {
             this.valid = false;
         }
     }

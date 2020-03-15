@@ -1,34 +1,30 @@
 1777510_1	president PERSON	[Bush]	At the White House , President Bush press secretary said , I 'm not sure at this juncture we 're going to step in and put up a stop sign , although he called on Israel and said Mr. Bush was very much concerned about a growing human crisis .
+1777510_1	mr. PERSON	[Bush]	At the White House , President Bush press secretary said , I 'm not sure at this juncture we 're going to step in and put up a stop sign , although he called on Israel and said Mr. Bush was very much concerned about a growing human crisis .
 1793067_3	PERSON to LOCATION	[Cody Bass, Mississauga]	Returned C Cody Bass to Mississauga to Lethbridge .
 1793067_3	LOCATION of the ohl	[Mississauga]	Mississauga of the OHL
 1793067_3	lw PERSON	[Nick Foligno]	OHL , LW Nick Foligno
 1793067_3	PERSON to LOCATION	[Nick Foligno, Sudbury]	Nick Foligno to Sudbury
 1793067_3	LOCATION of the ohl	[Sudbury]	Sudbury of the OHL
-1783021_5	LOCATION , n.y.	[Westhampton]	Westhampton , N.Y. ,
-1801574_2	LOCATION , LOCATION	[United Arab Emirates, Saudi Arabia]	United Arab Emirates , Saudi Arabia and the other oil states
-1743758_1	history , ORGANIZATION	[University of Michigan]	History , University of Michigan
-1743758_1	history , ORGANIZATION	[University of Oklahoma]	History , University of Oklahoma
+1783021_5	LOCATION n.y.	[Westhampton]	Westhampton , N.Y. ,
+1743758_1	history ORGANIZATION	[University of Michigan]	History , University of Michigan
+1743758_1	history ORGANIZATION	[University of Oklahoma]	History , University of Oklahoma
+1777275_1	PERSON say	[Gibson]	Mr. Gibson said he was looking forward to pitting his broadcast this fall .
 1777275_1	mr. PERSON say	[Gibson]	Mr. Gibson said he was looking forward to pitting his broadcast this fall .
-1778045_1	LOCATION , LOCATION , LOCATION	[Cairo, Amman, Jordan]	Cairo , Amman , Jordan , and Riyadh
-1778045_1	LOCATION , LOCATION	[Riyadh, Saudi Arabia]	Riyadh , Saudi Arabia ,
-1664245_3	LOCATION , LOCATION	[Navegantes, Brazil]	Navegantes , Brazil , a coastal city
+1777275_1	mr. PERSON	[Gibson]	Mr. Gibson said he was looking forward to pitting his broadcast this fall .
 1775921_1	PERSON say	[Bronson Arroyo]	Cincinnati Reds pitcher Bronson Arroyo said that even as a boy , Pierzynski was a feisty player .
-1798268_5	LOCATION , LOCATION	[Pennsylvania, Ohio]	Pennsylvania , Ohio and New Mexico
 1641875_1	prince PERSON	[Harry]	But even by its standards , Prince Harry has broken new ground .
 1641875_1	prince PERSON	[Charles]	son of Prince Charles , the Princess , grandson , third in line to the throne
 1772879_1	lw PERSON	[Fredrik Modin]	TAMPA BAY LIGHTNING -- Traded LW Fredrik Modin to Columbus .
-1802342_1	LOCATION , LOCATION	[Taos, New Mexico]	Taos , New Mexico ,
 1702500_1	PERSON of LOCATION	[Tony Blair, Britain]	Tony Blair of Britain
 1741625_1	PERSON say	[Markus Gandler]	Markus Gandler said at a news conference Tuesday in the mountain town .
-1747036_1	LOCATION , LOCATION , LOCATION	[Cleveland, Atlanta, Denver]	Cleveland , Atlanta , Denver , Vancouver and Golden State
-1747036_1	LOCATION , n.y.	[Rockaway]	Rockaway , N.Y. ,
+1747036_1	LOCATION n.y.	[Rockaway]	Rockaway , N.Y. ,
 1722598_4	mr. PERSON	[Weingarten]	As he looks to the past , Mr. Weingarten cites Jonathan Swift as early practitioners .
-1791903_2	ORGANIZATION chief executive	[Hewlett-Packard]	Pressure is mounting on Hewlett-Packard chief executive to explain what appears to have been a greater role .
-1791903_2	executive , PERSON	[Mark V. Hurd]	executive , Mark V. Hurd ,
+1791903_2	executive PERSON	[Mark V. Hurd]	executive , Mark V. Hurd ,
+1678161_1	PERSON say	[Beck]	Mr. Beck said in an interview that he had chosen a generic Arkansas dialect rather than a ` Saturday Night Live version .
 1678161_1	mr. PERSON say	[Beck]	Mr. Beck said in an interview that he had chosen a generic Arkansas dialect rather than a ` Saturday Night Live version .
-1786932_2	LOCATION , LOCATION	[Indonesia, Malaysia]	Indonesia , Malaysia and Bangladesh
-1809518_2	executive , PERSON	[Jeffrey B. Kindler]	executive , Jeffrey B. Kindler ,
-1809518_2	ORGANIZATION chief executive	[Pfizer]	Just last Thursday , Pfizer chief executive said publicly that the drug could be among the most important new developments .
+1678161_1	mr. PERSON	[Beck]	Mr. Beck said in an interview that he had chosen a generic Arkansas dialect rather than a ` Saturday Night Live version .
+1809518_2	executive PERSON	[Jeffrey B. Kindler]	executive , Jeffrey B. Kindler ,
+1809518_2	PERSON say	[Jeffrey B. Kindler]	Just last Thursday , Pfizer chief {{executive , Jeffrey B. Kindler ,}} said publicly that the drug could be among the most important new developments .
 1642483_1	PERSON of LOCATION	[M. Jodi Rell, Connecticut]	M. Jodi Rell of Connecticut
 1815244_1	PERSON of LOCATION	[Mikheil Saakashvili, Georgia]	Mikheil Saakashvili of Georgia
 1815244_1	president PERSON	[Mikheil Saakashvili]	President Mikheil Saakashvili has made reunification a central goal .

@@ -16,6 +16,16 @@ $
 ----
 -----
 *
+``
+`
+'
+''
+:
+-lrb-
+-rrb-
+-lsb-
+-rsb-
+.
 =
 +
 a
@@ -66,7 +76,6 @@ ask
 asking
 associated
 at
-available
 away
 awfully
 b
@@ -78,10 +87,8 @@ becomes
 becoming
 been
 before
-beforehand
 behind
 being
-believe
 below
 beside
 besides
@@ -241,7 +248,6 @@ must
 my
 myself
 n
-name
 namely
 nd
 near
@@ -265,7 +271,6 @@ normally
 not
 nothing
 novel
-now
 nowhere
 o
 obviously
@@ -319,7 +324,6 @@ regarding
 regardless
 relatively
 respectively
-right
 s
 same
 second
@@ -331,9 +335,6 @@ seems
 seen
 self
 selves
-sensible
-serious
-seriously
 seven
 several
 shall
@@ -352,17 +353,12 @@ sometimes
 somewhat
 somewhere
 soon
-sorry
 still
 sub
 such
 sup
 sure
 t
-take
-taken
-tell
-tends
 th
 than
 thanx
@@ -397,7 +393,6 @@ throughout
 thru
 thus
 to
-together
 too
 took
 toward
@@ -1024,8 +1019,6 @@ our
 ours
 ourselves
 out
-over
-own
 same
 shan't
 she
@@ -1221,3 +1214,4 @@ _
 :
 (
 )
+;

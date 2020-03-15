@@ -6,6 +6,7 @@ import edu.stanford.nlp.process.Morphology;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Util {
     public static int sum(List<Integer> abc){
@@ -26,14 +27,15 @@ public class Util {
         return ans;
     }
 
-    static List<Map.Entry<MetaPattern, Integer>> sortDecreasing(Map<MetaPattern, Integer> map) {
-        List<Map.Entry<MetaPattern, Integer>> l = new ArrayList<>(map.entrySet());
+    static List<Map.Entry<String, Integer>> sortDecreasing(Map<String, Integer> map) {
+        List<Map.Entry<String, Integer>> l = new ArrayList<>(map.entrySet());
         // Arrange patterns in decreasing order of frequency
         l.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
         return l;
     }
 
-    static List<Integer> check_subsequence(List<SubSentWords> main_sequence, String mainPattern, String[] nerTypes){
+    static List<Integer> check_subsequence(List<String> main_sequence, List<String> encodings, boolean checkContinuity,
+                                           String mainPattern, String[] nerTypes){
         String[] pattern = mainPattern.split(" ");
         int m = main_sequence.size(), n = pattern.length;
         List<Integer> ans = new ArrayList<>();
@@ -45,30 +47,32 @@ public class Util {
             int i = 0;
             solutionFound = true;
             for (int j = startingIndex ; j < m && i < n; j++) {
-                if (main_sequence.get(j).getLemma().equals(pattern[i])) {
+                if (main_sequence.get(j).equals(pattern[i])) {
                     storingIndex.add(j);
-                    patternTree.add(main_sequence.get(j).getTrimmedEncoding());
-                    for (String ner : nerTypes) {
-                        if (main_sequence.get(j).getLemma().contains(ner)) {
-                            ans.add(j);
-                        }
+                    patternTree.add(encodings.get(j));
+                    if (containsEntity(main_sequence.get(j), nerTypes)) {
+                        ans.add(j);
                     }
                     i++;
                 }
             }
             if (i == n) {
-                String root = min_characters(patternTree);
-                for (String t : patternTree) {
-                    if (!patternTree.contains(t.substring(0, t.length() - 1)) && !t.equals(root)) {
-                        solutionFound = false;
-                        startingIndex = storingIndex.get(0) + 1;
-                        storingIndex.clear();
-                        patternTree.clear();
-                        ans.clear();
-                        break;
+                if (checkContinuity) {
+                    String root = min_characters(patternTree);
+                    for (String t : patternTree) {
+                        if (!patternTree.contains(t.substring(0, t.length() - 1)) && !t.equals(root)) {
+                            solutionFound = false;
+                            startingIndex = storingIndex.get(0) + 1;
+                            storingIndex.clear();
+                            patternTree.clear();
+                            ans.clear();
+                            break;
+                        }
                     }
-                }
-                if (solutionFound) {
+                    if (solutionFound) {
+                        return ans;
+                    }
+                } else {
                     return ans;
                 }
             } else {
@@ -77,12 +81,12 @@ public class Util {
         }
     }
 
-    static List<Map.Entry<SubSentWords, List<SubSentWords>>> sort_leafToTop(SentenceProcessor sentence){
-        List<Map.Entry<SubSentWords, List<SubSentWords>>> l = new ArrayList<>(sentence.getSentenceBreakdown().entrySet());
+    static List<SubSentWords> sort_leafToTop(SentenceProcessor sentence){
+        List<SubSentWords> l = new ArrayList<>(sentence.getSentenceBreakdown().keySet());
         // Arrange sub-roots from leaf to root of sentence
         l.sort((o1, o2) -> {
-            Integer i2 = o2.getKey().getEncoding().length();
-            Integer i1 = o1.getKey().getEncoding().length();
+            Integer i2 = o2.getTrimmedEncoding().length();
+            Integer i1 = o1.getTrimmedEncoding().length();
             return i2.compareTo(i1);
         });
         return l;
@@ -127,9 +131,11 @@ public class Util {
     }
 
     static void writePatternsToFile(BufferedWriter bw, Map<String, List<MetaPattern>> patternList) throws IOException {
-        for (String metaPattern : patternList.keySet()) {
-            int freq = frequencySumHelper(patternList.get(metaPattern));
-            bw.write(metaPattern + "->" + freq + "\n");
+        Map<String, Integer> patternCount = new HashMap<>();
+        patternList.forEach((key, val) -> patternCount.put(key, frequencySumHelper(val)));
+        for (Map.Entry<String, Integer> metaPattern : sortDecreasing(patternCount)) {
+            int freq = metaPattern.getValue();
+            bw.write(metaPattern.getKey() + "->" + freq + "\n");
         }
         bw.close();
     }
@@ -140,7 +146,7 @@ public class Util {
         return total;
     }
 
-    static int maxNerCount(List<MetaPattern> patterns) {
+    static Integer maxNerCount(List<MetaPattern> patterns) {
         if (patterns.isEmpty()) return 0;
         int max = Integer.MIN_VALUE;
         for (MetaPattern p : patterns) {
@@ -176,5 +182,18 @@ public class Util {
             line = br.readLine();
         }
         return ans;
+    }
+
+    static Map<String, Integer> returnSortedPatternList(Map<String, List<MetaPattern>> patternList) {
+        Map<String, Integer> ans = new LinkedHashMap<>();
+        List<String> l = new ArrayList<>(patternList.keySet());
+        l.sort((o1, o2) ->
+                returnPatternWeight(o2, patternList.get(o2)).compareTo(returnPatternWeight(o1, patternList.get(o1))));
+        l.forEach(s -> ans.put(s, maxNerCount(patternList.get(s))));
+        return ans;
+    }
+
+    private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
+        return (double) maxNerCount(patternList) + metaPattern.split(" ").length/200.0;
     }
 }

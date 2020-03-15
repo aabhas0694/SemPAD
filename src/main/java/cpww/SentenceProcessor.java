@@ -15,69 +15,52 @@ import edu.stanford.nlp.semgraph.SemanticGraph;
 public class SentenceProcessor implements Serializable {
     private String sentence;
     private String sentID;
-    private String[] nerTypes;
-    private SemanticGraph semanticGraph;
-    private Map<IndexedWord, TreeSet<IndexedWord>> subTree = new HashMap<>();
     private Map<SubSentWords, List<SubSentWords>> sentenceBreakdown = new LinkedHashMap<>();
-    private List<IndexedWord> roots = new ArrayList<>();
-    private Map<IndexedWord, String> encodeTree = new HashMap<>();
-
+    private Map<String, SubSentWords> reverseEncoding = new HashMap<>();
     private Map<String, SubSentWords> replaceSurfaceName = new HashMap<>();
     private Map<SubSentWords, List<SubSentWords>> pushedUpSentences = new HashMap<>();
-
-    private Map<String, String> entityDictionary;
 
     public SentenceProcessor(StanfordCoreNLP pipeline, String[] nerTypes, Map<String, String> entityDictionary,
                              String sentence, String sentID) {
         super();
-        this.nerTypes = nerTypes;
-        this.entityDictionary = entityDictionary;
-        processSentence(sentence, sentID, pipeline);
+        processSentence(sentence, sentID, pipeline, entityDictionary, nerTypes);
     }
 
-    public void processSentence(String text, String sentID, StanfordCoreNLP pipeline) {
+    public void processSentence(String text, String sentID, StanfordCoreNLP pipeline, Map<String, String> entityDict, String[] nerTypes) {
         this.sentence = text;
         this.sentID = sentID;
-        setParameters(text, pipeline);
-        encodeTree(this.semanticGraph.getFirstRoot(), "A_root");
-        splitNoun(this.semanticGraph.getFirstRoot());
-        sentenceBreakdown();
+        SemanticGraph semanticGraph = generateSemanticGraph(text, pipeline);
+        Map<IndexedWord, String> encodeTree = encodeTree(semanticGraph, semanticGraph.getFirstRoot(), "A_root", new HashMap<>());
+        generateReverseWordEncoding(encodeTree, entityDict, nerTypes);
+        Map<IndexedWord, TreeSet<IndexedWord>> subTree = splitNoun(semanticGraph.getFirstRoot(), new HashMap<>(),  semanticGraph);
+        sentenceBreakdown(encodeTree, subTree);
     }
 
-    private void setParameters(String text, StanfordCoreNLP pipeline) {
+    private SemanticGraph generateSemanticGraph(String text, StanfordCoreNLP pipeline) {
         Annotation ann = new Annotation(text);
         pipeline.annotate(ann);
         CoreMap sentence = ann.get(SentencesAnnotation.class).get(0);
-        this.semanticGraph = sentence.get(BasicDependenciesAnnotation.class);
-        this.roots = new ArrayList<>(this.semanticGraph.getRoots());
+        return sentence.get(BasicDependenciesAnnotation.class);
     }
 
-    public List<IndexedWord> getRoots() {
-        return this.roots;
-    }
-
-    public SemanticGraph getSemanticGraph() {
-        return this.semanticGraph;
-    }
-
-    private void splitNoun(IndexedWord root) {
-        if (this.subTree.containsKey(root)) {
-            return;
+    private Map<IndexedWord, TreeSet<IndexedWord>> splitNoun(IndexedWord root, Map<IndexedWord, TreeSet<IndexedWord>> subTree, SemanticGraph semanticGraph) {
+        if (subTree.containsKey(root)) {
+            return subTree;
         }
         int index = root.index();
-        this.subTree.put(root, new TreeSet<>());
+        subTree.put(root, new TreeSet<>());
         Queue<IndexedWord> search = new LinkedList<>();
         search.offer(root);
         while (!search.isEmpty()) {
             IndexedWord node = search.poll();
-            if (!this.subTree.get(root).contains(node)) {
-                TreeSet<IndexedWord> temp = this.subTree.get(root);
+            if (!subTree.get(root).contains(node)) {
+                TreeSet<IndexedWord> temp = subTree.get(root);
                 temp.add(node);
-                this.subTree.put(root, temp);
+                subTree.put(root, temp);
             }
             int newIndex = node.index();
-            boolean rootCheck = this.roots.contains(node);
-            List<IndexedWord> children = this.semanticGraph.getChildList(node);
+            boolean rootCheck = semanticGraph.getRoots().contains(node);
+            List<IndexedWord> children = semanticGraph.getChildList(node);
 
             for (IndexedWord child : children) {
                 if (rootCheck || node.tag().charAt(0) != 'N') {
@@ -91,24 +74,26 @@ public class SentenceProcessor implements Serializable {
                 }
             }
             if (node.tag().charAt(0) == 'N') {
-                splitNoun(node);
+                subTree = splitNoun(node, subTree, semanticGraph);
             }
         }
+        return subTree;
     }
 
-    private void encodeTree(IndexedWord r, String coding) {
-        if (this.encodeTree.containsKey(r)) return;
-        this.encodeTree.put(r, coding);
+    private Map<IndexedWord, String> encodeTree(SemanticGraph semanticGraph, IndexedWord r, String coding, Map<IndexedWord, String> map) {
+        if (map.containsKey(r)) return map;
+        map.put(r, coding);
         int i = 0;
         for (SemanticGraphEdge edge : semanticGraph.getOutEdgesSorted(r)) {
             char ch = (char) ((int) 'A' + i++);
             String new_coding = coding.split("_")[0] + ch + '_' + edge.getRelation();
-            encodeTree(edge.getDependent(), new_coding);
+            map = encodeTree(semanticGraph, edge.getDependent(), new_coding, map);
         }
+        return map;
     }
 
-    private boolean containsEntity(String subRoot) {
-        for (String ner : this.nerTypes) {
+    private boolean containsEntity(String subRoot, String[] nerTypes) {
+        for (String ner : nerTypes) {
             if (subRoot.contains(ner)) {
                 return true;
             }
@@ -116,62 +101,31 @@ public class SentenceProcessor implements Serializable {
         return false;
     }
 
-    public Map<String, SubSentWords> getReverseWordEncoding() {
-        Map<String, SubSentWords> myNewHashMap = new HashMap<>();
-        for(Map.Entry<IndexedWord, String> entry : this.encodeTree.entrySet()){
+    private void generateReverseWordEncoding(Map<IndexedWord, String> encodeTree, Map<String, String> entityDict, String[] nerTypes) {
+        for(Map.Entry<IndexedWord, String> entry : encodeTree.entrySet()){
             SubSentWords word = new SubSentWords(entry.getKey(), entry.getValue(),
-                    this.containsEntity(entry.getKey().value()));
-            word.setWord(entityDictionary.getOrDefault(entry.getKey().value(), entry.getKey().value()));
-            myNewHashMap.put(entry.getValue(), word);
+                    this.containsEntity(entry.getKey().value(), nerTypes));
+            word.setWord(entityDict.getOrDefault(entry.getKey().value(), entry.getKey().value()));
+            this.reverseEncoding.put(entry.getValue(), word);
         }
-        return myNewHashMap;
     }
 
-    private void sentenceBreakdown() {
-        for (IndexedWord key : this.subTree.keySet()) {
-            SubSentWords subRoot = new SubSentWords(key, this.encodeTree.get(key), this.containsEntity(key.value()));
-            subRoot.setWord(entityDictionary.getOrDefault(key.value(), key.value()));
-            TreeSet<IndexedWord> values = this.subTree.get(key);
+    public Map<String, SubSentWords> getReverseWordEncoding() {
+        return this.reverseEncoding;
+    }
+
+    private void sentenceBreakdown(Map<IndexedWord, String> encodeTree, Map<IndexedWord, TreeSet<IndexedWord>> subTree) {
+        for (IndexedWord key : subTree.keySet()) {
+            SubSentWords subRoot = this.reverseEncoding.get(encodeTree.get(key));
+            TreeSet<IndexedWord> values = subTree.get(key);
             List<SubSentWords> temp = new ArrayList<>();
             for (IndexedWord w : values) {
-                SubSentWords tempWord = new SubSentWords(w, this.encodeTree.get(w), this.containsEntity(w.value()));
-                tempWord.setWord(entityDictionary.getOrDefault(w.value(), w.value()));
+                SubSentWords tempWord = this.reverseEncoding.get(encodeTree.get(w));
                 temp.add(tempWord);
             }
             this.sentenceBreakdown.put(subRoot, temp);
         }
     }
-
-//    public String returnSentenceBreakdown(String mode) throws Exception {
-//        if (this.sentenceBreakdown.isEmpty()) {
-//            throw new Exception("No Breakdown Data Exists.");
-//        }
-//        StringBuilder result = new StringBuilder();
-//        result.append(this.sentID).append("\n");
-//        Map<String, List<String>> toPrint = new HashMap<>();
-//        toPrint = mode.toLowerCase().equals("subsent") ? this.subSentence : this.subEncode;
-//        for (String key : toPrint.keySet()) {
-//            result.append(key).append("->").append(String.join(" ", toPrint.get(key))).append("\n");
-//        }
-//        return result.toString();
-//    }
-
-//    public void printSentenceBreakdown(String mode) throws Exception {
-//        System.out.print(this.returnSentenceBreakdown(mode));
-//    }
-
-//    public void setSentenceProcess(String sentID, List<String> sent, List<String> enc) throws IOException {
-//        if (sent.size() != enc.size()) {
-//            throw new IOException("Sentence and Encoding size do not match.");
-//        }
-//        this.sentID = sentID;
-//        for (int i = 0; i < sent.size(); i++) {
-//            String[] sentBreak = sent.get(i).split("->");
-//            String[] encBreak = enc.get(i).split("->");
-//            this.subSentence.put(sentBreak[0], Arrays.asList(sentBreak[1].split(" ")));
-//            this.subEncode.put(encBreak[0], Arrays.asList(encBreak[1].split(" ")));
-//        }
-//    }
 
     public Map<SubSentWords, List<SubSentWords>> getSentenceBreakdown() {
         return this.sentenceBreakdown;
