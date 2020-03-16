@@ -6,11 +6,13 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static cpww.Util.trimEncoding;
+
 public class PatternInstance {
     private String sentID;
     private String metaPattern;
-    private List<String> entities;
-    private List<List<String>> alternateEntities;
+    private List<String> entities = new ArrayList<>();
+    private List<List<String>> alternateEntities = new ArrayList<>();
     private String sentenceInstance;
 
     PatternInstance (SentenceProcessor sentence, SubSentWords subRoot, String metaPattern, List<Integer> entityPos) {
@@ -22,20 +24,24 @@ public class PatternInstance {
         List<String> subEnc = value.stream().map(SubSentWords::getEncoding).collect(Collectors.toList());
         String encoding = String.join(" ", subEnc);
         for (Integer entityPo : entityPos) {
-            SubSentWords entity_code = value.get(entityPo + adjust_length);
-            if (sentence.getReplaceSurfaceName().containsKey(entity_code.getTrimmedEncoding()) &&
-                    !entity_code.getTrimmedEncoding().equals(subRoot.getTrimmedEncoding())) {
+            String entity_code = encoding.split(" ")[entityPo + adjust_length];
+            if (sentence.getReplaceSurfaceName().containsKey(trimEncoding(entity_code)) &&
+                    !trimEncoding(entity_code).equals(subRoot.getTrimmedEncoding())) {
                 List<String> output = hierarchical_expansion(sentence, encoding, entity_code);
                 this.entities.add(encodingMap.get(output.get(0)).getOriginalWord());
                 List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(encodingMap.get(output.get(0)));
-                alternateEntities.add(conjunctionSearch(output.get(0), entitySent));
+                this.alternateEntities.add(conjunctionSearch(output.get(0), entitySent));
+                adjust_length = output.get(1).split(" ").length - encoding.split(" ").length;
                 encoding = output.get(1);
             } else {
-                entities.add(entity_code.getOriginalWord());
-                List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(entity_code);
-                alternateEntities.add(conjunctionSearch(entity_code.getEncoding(), entitySent));
+                this.entities.add(encodingMap.get(entity_code).getOriginalWord());
+                List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(encodingMap.get(entity_code));
+                if (entitySent == null) {
+                    System.out.println("Im here");
+                }
+                this.alternateEntities.add(conjunctionSearch(entity_code, entitySent));
             }
-            sentenceInstance = map_original_tokens(sentence, encoding);
+            this.sentenceInstance = map_original_tokens(sentence, encoding);
         }
     }
 
@@ -51,36 +57,35 @@ public class PatternInstance {
     }
 
     private static List<String> hierarchical_expansion(SentenceProcessor sentence, String original_subEnc,
-                                                       SubSentWords entityEncode) {
-        List<SubSentWords> toBeAddedSubSent = sentence.getSentenceBreakdown().get(entityEncode);
+                                                       String entityEncode){
+        List<SubSentWords> toBeAddedSubSent = sentence.getSentenceBreakdown().get(sentence.getReverseWordEncoding().get(entityEncode));
         String added_subEnc = toBeAddedSubSent.stream().map(SubSentWords::getEncoding).collect(Collectors.joining(" "));
-        SubSentWords replace_encode = sentence.getReplaceSurfaceName().get(entityEncode.getTrimmedEncoding());
-        String entity_encode = entityEncode.getEncoding();
-        int index_diff = original_subEnc.length() - entity_encode.length();
+        SubSentWords replace_encode = sentence.getReplaceSurfaceName().get(trimEncoding(entityEncode));
+        int index_diff = original_subEnc.length() - entityEncode.length();
 
         List<String> ans = new ArrayList<>();
         ans.add(replace_encode.getEncoding());
-        if (original_subEnc.contains(replace_encode.getEncoding()) || replace_encode.equals(entityEncode)) {
+        if (original_subEnc.contains(replace_encode.getEncoding()) || replace_encode.getEncoding().equals(entityEncode)) {
             // Do nothing
-        } else if (original_subEnc.contains(" " + entity_encode + " ")) {
-            original_subEnc = original_subEnc.replace(" " + entity_encode + " ", " {{" + added_subEnc + "}} ");
-        } else if (original_subEnc.contains("{{" + entity_encode + " ")) {
-            original_subEnc = original_subEnc.replace("{{" + entity_encode + " ", "{{{{" + added_subEnc + "}} ");
-        } else if (original_subEnc.contains(" " + entity_encode + "}}")) {
-            original_subEnc = original_subEnc.replace(" " + entity_encode + "}}", " {{" + added_subEnc + "}}}}");
-        } else if (original_subEnc.contains("{{" + entity_encode + "}}")) {
-            original_subEnc = original_subEnc.replace("{{" + entity_encode + "}}", "{{{{" + added_subEnc + "}}}}");
-        } else if (index_diff > 0 && original_subEnc.substring(index_diff - 1).contains(" " + entity_encode)) {
+        } else if (original_subEnc.contains(" " + entityEncode + " ")) {
+            original_subEnc = original_subEnc.replace(" " + entityEncode + " ", " {{" + added_subEnc + "}} ");
+        } else if (original_subEnc.contains("{{" + entityEncode + " ")) {
+            original_subEnc = original_subEnc.replace("{{" + entityEncode + " ", "{{{{" + added_subEnc + "}} ");
+        } else if (original_subEnc.contains(" " + entityEncode + "}}")) {
+            original_subEnc = original_subEnc.replace(" " + entityEncode + "}}", " {{" + added_subEnc + "}}}}");
+        } else if (original_subEnc.contains("{{" + entityEncode + "}}")) {
+            original_subEnc = original_subEnc.replace("{{" + entityEncode + "}}", "{{{{" + added_subEnc + "}}}}");
+        } else if (index_diff > 0 && original_subEnc.substring(index_diff - 1).contains(" " + entityEncode)) {
             original_subEnc = original_subEnc.substring(0, index_diff - 1) + " {{" + added_subEnc + "}}";
-        } else if (original_subEnc.contains(entity_encode + " ")) {
-            original_subEnc = "{{" + added_subEnc + "}} " + original_subEnc.substring(entity_encode.length() + 1);
+        } else if (original_subEnc.contains(entityEncode + " ")) {
+            original_subEnc = "{{" + added_subEnc + "}} " + original_subEnc.substring(entityEncode.length() + 1);
         }
         if (!sentence.getReplaceSurfaceName().containsKey(replace_encode.getTrimmedEncoding()) ||
-                replace_encode.getEncoding().equals(entityEncode.getEncoding())) {
+                replace_encode.getEncoding().equals(entityEncode)) {
             ans.add(original_subEnc);
             return ans;
         }
-        return hierarchical_expansion(sentence, original_subEnc, replace_encode);
+        return hierarchical_expansion(sentence, original_subEnc, replace_encode.getEncoding());
     }
 
     private String map_original_tokens(SentenceProcessor sentence, String encode){
@@ -114,7 +119,7 @@ public class PatternInstance {
             output += entity + ", ";
         }
         output = output.substring(0, output.length() - 2) + "]\t" + sentenceInstance + "\n";
-        if (alternateEntities != null) {
+        if (!this.alternateEntities.isEmpty()) {
             for (int i = 0; i < alternateEntities.size(); i++) {
                 if (alternateEntities.get(i) != null) {
                     for (int j = 0; j < alternateEntities.get(i).size(); j++) {

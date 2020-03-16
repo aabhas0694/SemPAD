@@ -90,7 +90,7 @@ public class MetaPattern {
             }
         }
         if (startIndex >= endIndex || (this.entityContainingWords.size() < this.nerCount &&
-                endIndex - startIndex < this.nerCount)) {
+                endIndex - startIndex < this.nerCount) || this.nerCount > 1 && endIndex - startIndex == this.nerCount - 1) {
             this.valid = false;
             this.clippedMetaPattern = null;
             return;
@@ -117,7 +117,7 @@ public class MetaPattern {
         return this.entities;
     }
 
-    int getNerCount() {
+    public int getNerCount() {
         return nerCount;
     }
 }

@@ -32,7 +32,7 @@ public class SentenceProcessor implements Serializable {
         SemanticGraph semanticGraph = generateSemanticGraph(text, pipeline);
         Map<IndexedWord, String> encodeTree = encodeTree(semanticGraph, semanticGraph.getFirstRoot(), "A_root", new HashMap<>());
         generateReverseWordEncoding(encodeTree, entityDict, nerTypes);
-        Map<IndexedWord, TreeSet<IndexedWord>> subTree = splitNoun(semanticGraph.getFirstRoot(), new HashMap<>(),  semanticGraph);
+        Map<IndexedWord, TreeSet<IndexedWord>> subTree = splitNoun(semanticGraph.getFirstRoot(), new HashMap<>(),  semanticGraph, nerTypes);
         sentenceBreakdown(encodeTree, subTree);
     }
 
@@ -43,7 +43,8 @@ public class SentenceProcessor implements Serializable {
         return sentence.get(BasicDependenciesAnnotation.class);
     }
 
-    private Map<IndexedWord, TreeSet<IndexedWord>> splitNoun(IndexedWord root, Map<IndexedWord, TreeSet<IndexedWord>> subTree, SemanticGraph semanticGraph) {
+    private Map<IndexedWord, TreeSet<IndexedWord>> splitNoun(IndexedWord root, Map<IndexedWord,
+            TreeSet<IndexedWord>> subTree, SemanticGraph semanticGraph, String[] nerTypes) {
         if (subTree.containsKey(root)) {
             return subTree;
         }
@@ -63,7 +64,7 @@ public class SentenceProcessor implements Serializable {
             List<IndexedWord> children = semanticGraph.getChildList(node);
 
             for (IndexedWord child : children) {
-                if (rootCheck || node.tag().charAt(0) != 'N') {
+                if (rootCheck || !isSplitPoint(node, nerTypes)) {
                     search.offer(child);
                 } else {
                     if (root.equals(node)) {
@@ -73,8 +74,8 @@ public class SentenceProcessor implements Serializable {
                     }
                 }
             }
-            if (node.tag().charAt(0) == 'N') {
-                subTree = splitNoun(node, subTree, semanticGraph);
+            if (isSplitPoint(node, nerTypes)) {
+                subTree = splitNoun(node, subTree, semanticGraph, nerTypes);
             }
         }
         return subTree;
@@ -108,6 +109,10 @@ public class SentenceProcessor implements Serializable {
             word.setWord(entityDict.getOrDefault(entry.getKey().value(), entry.getKey().value()));
             this.reverseEncoding.put(entry.getValue(), word);
         }
+    }
+
+    private boolean isSplitPoint(IndexedWord word, String[] nerTypes) {
+        return word.tag().charAt(0) == 'N' || containsEntity(word.value(), nerTypes);
     }
 
     public Map<String, SubSentWords> getReverseWordEncoding() {

@@ -55,8 +55,8 @@ public class CPWW {
         }
         setOptionalParameterDefaults(prop);
         data_name = prop.getProperty("data_name");
-        inputFolder = prop.getProperty("inputFolder");
-        outputFolder = prop.getProperty("outputFolder");
+        inputFolder = folderNameConsistency(prop.getProperty("inputFolder"));
+        outputFolder = folderNameConsistency(prop.getProperty("outputFolder"));
         noOfLines = Integer.parseInt(prop.getProperty("noOfLines"));
         minimumSupport = Integer.parseInt(prop.getProperty("minimumSupport"));
         maxLength = Integer.parseInt(prop.getProperty("maxLength"));
@@ -69,6 +69,7 @@ public class CPWW {
         FileHandler logFile = new FileHandler(outputFolder + data_name + "_logFile.txt");
         logFile.setFormatter(new SimpleFormatter());
         logger.addHandler(logFile);
+
         File dir = new File(inputFolder);
         if (!dir.exists()) {
             throw new IOException("Input Folder not found.");
@@ -356,11 +357,11 @@ public class CPWW {
     }
 
     private static List<String> hierarchical_expansion(SentenceProcessor sentence, String original_subEnc,
-                                                       SubSentWords entityEncode){
-        List<SubSentWords> toBeAddedSubSent = sentence.getSentenceBreakdown().get(entityEncode);
+                                                       String entityEncode){
+        List<SubSentWords> toBeAddedSubSent = sentence.getSentenceBreakdown().get(sentence.getReverseWordEncoding().get(entityEncode));
         String added_subEnc = toBeAddedSubSent.stream().map(SubSentWords::getEncoding).collect(Collectors.joining(" "));
-        SubSentWords replace_encode = sentence.getReplaceSurfaceName().get(entityEncode.getTrimmedEncoding());
-        String entity_encode = entityEncode.getEncoding();
+        SubSentWords replace_encode = sentence.getReplaceSurfaceName().get(trimEncoding(entityEncode));
+        String entity_encode = entityEncode;
         int index_diff = original_subEnc.length() - entity_encode.length();
 
         List<String> ans = new ArrayList<>();
@@ -381,11 +382,11 @@ public class CPWW {
             original_subEnc = "{{" + added_subEnc + "}} " + original_subEnc.substring(entity_encode.length() + 1);
         }
         if (!sentence.getReplaceSurfaceName().containsKey(replace_encode.getTrimmedEncoding()) ||
-                replace_encode.getEncoding().equals(entityEncode.getEncoding())) {
+                replace_encode.getEncoding().equals(entityEncode)) {
             ans.add(original_subEnc);
             return ans;
         }
-        return hierarchical_expansion(sentence, original_subEnc, replace_encode);
+        return hierarchical_expansion(sentence, original_subEnc, replace_encode.getEncoding());
     }
 
     public static String map_original_tokens(SentenceProcessor sentence, String encode){
@@ -482,7 +483,7 @@ public class CPWW {
 
     private static Map<String, Integer> loadPatternClassificationData(String type) throws IOException {
         logger.log(Level.INFO, "STARTING: Loading Meta-Pattern Classification Data");
-        String name = type.equals("single") ? "_singlePatterns" : "_multiPatterns";
+        String name = type.equals("multi") ? "_multiPatterns" : "_singlePatterns";
         String directory = outputFolder + data_name;
         String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
         BufferedReader patterns = new BufferedReader(new FileReader(directory + name + suffix));
@@ -521,23 +522,18 @@ public class CPWW {
         }
     }
 
-    private static List<String> patternFinding(SentenceProcessor sentence, Map<String, Integer> sPattern, Map<String,
-            Integer> mPattern) {
+    private static List<String> patternFinding(SentenceProcessor sentence, List<Map<String, Integer>> patternList) {
         List<String> ans = new ArrayList<>();
         String output;
         Map<SubSentWords, List<SubSentWords>> map;
-        Map<String, Integer> freqPatterns;
         for (SubSentWords subRoot : sentence.getSentenceBreakdown().keySet()) {
-            int iter = 2;
-            map = sentence.getPushedUpSentences().containsKey(subRoot) ? sentence.getPushedUpSentences() :
-                    sentence.getSentenceBreakdown();
-//            if (sentence.getPushedUpSentences().containsKey(subRoot)) {
-//                iter += 2;
-//            }
+            int iter = 1;
+            if (sentence.getPushedUpSentences().containsKey(subRoot)) {
+                iter++;
+            }
             while (iter > 0) {
-                //map = (iter > 2) ? sentence.getPushedUpSentences() : sentence.getSentenceBreakdown();
-                freqPatterns = (iter % 2 != 0) ? sPattern : mPattern;
-                output = patternMatchingHelper(sentence, map, subRoot, freqPatterns);
+                map = (iter == 2) ? sentence.getPushedUpSentences() : sentence.getSentenceBreakdown();
+                output = patternMatchingHelper(sentence, map, subRoot, patternList);
                 if (output != null) ans.add(output);
                 iter--;
             }
@@ -546,24 +542,34 @@ public class CPWW {
     }
 
     private static String patternMatchingHelper(SentenceProcessor sentence, Map<SubSentWords, List<SubSentWords>> dict,
-                                                SubSentWords subRoot, Map<String, Integer> patternList) {
+                                                SubSentWords subRoot, List<Map<String, Integer>> patternList) {
         List<String> out = new ArrayList<>();
         List<String> originalEncoding = sentence.getSentenceBreakdown().get(subRoot).stream().
                 map(SubSentWords::getTrimmedEncoding).collect(Collectors.toList());
         List<Integer> matchedEntityPos;
-        if (dict.containsKey(subRoot)) {
-            List<String> lemmaWords = dict.get(subRoot).stream().map(SubSentWords::getLemma).collect(Collectors.toList());
-            int endIndex = -1, startIndex = lemmaWords.size();
-            for (String metaPattern : patternList.keySet()) {
-                List<Integer> nerIndices = check_subsequence(lemmaWords, originalEncoding, true,
-                        metaPattern, nerTypes);
-                if (nerIndices != null) {
-                    if (nerIndices.get(0) >= endIndex || nerIndices.get(nerIndices.size() - 1) <= startIndex) {
-                        startIndex = Math.min(startIndex, nerIndices.get(0));
-                        endIndex = Math.max(endIndex, nerIndices.get(nerIndices.size() - 1));
-                        matchedEntityPos = new ArrayList<>(nerIndices);
-                        String temp = generatePatternInstances(sentence, subRoot, metaPattern, matchedEntityPos);
-                        if (temp != null) out.add(temp);
+        int multiCount = 0;
+        for (int i = 0; i < 2; i++) {
+            if (dict.containsKey(subRoot)) {
+                List<String> lemmaWords = dict.get(subRoot).stream().map(SubSentWords::getLemma).collect(Collectors.toList());
+                int endIndex = -1, startIndex = lemmaWords.size();
+                for (String metaPattern : patternList.get(i).keySet()) {
+                    List<Integer> nerIndices = check_subsequence(lemmaWords, originalEncoding, true,
+                            metaPattern, nerTypes);
+                    if (nerIndices != null) {
+                        int newStart = nerIndices.get(0), newEnd = nerIndices.get(nerIndices.size() - 1);
+                        boolean check1 = (i != 0) ? (newStart > endIndex) : (newStart >= endIndex);
+                        boolean check2 = (i != 0) ? (newEnd < startIndex) : (newEnd <= startIndex);
+                        if (check1 || check2) {
+                            if (i == 0) multiCount++;
+                            else {
+                                if (multiCount > 0) break;
+                            }
+                            startIndex = Math.min(startIndex, newStart);
+                            endIndex = Math.max(endIndex, newEnd);
+                            matchedEntityPos = new ArrayList<>(nerIndices);
+                            PatternInstance instance = new PatternInstance(sentence, subRoot, metaPattern, matchedEntityPos);
+                            out.add(instance.toString());
+                        }
                     }
                 }
             }
@@ -573,37 +579,37 @@ public class CPWW {
 
     private static String generatePatternInstances(SentenceProcessor sentence, SubSentWords subRoot,
                                                    String matchedPattern, List<Integer> entityPos) {
-        if (matchedPattern.equals("")) return null;
-//        PatternInstance instance = new PatternInstance(sentence, subRoot, matchedPattern, entityPos);
+//        if (matchedPattern.equals("")) return null;
+
 //        return instance.toString();
-        List<String> instances = new ArrayList<>();
-        Map<String, SubSentWords> encodingMap = sentence.getReverseWordEncoding();
-        int adjust_length = 0;
-        String words = null;
-        List<SubSentWords> value = sentence.getSentenceBreakdown().get(subRoot);
-        String subEnc = value.stream().map(SubSentWords::getEncoding).collect(Collectors.joining(" "));
-        for (Integer entityPo : entityPos) {
-            SubSentWords entity_code = value.get(entityPo + adjust_length);
-            if (sentence.getReplaceSurfaceName().containsKey(entity_code.getTrimmedEncoding()) &&
-                    !entity_code.getTrimmedEncoding().equals(subRoot.getTrimmedEncoding())) {
-                List<String> output = hierarchical_expansion(sentence, subEnc, entity_code);
-                adjust_length += output.get(1).split(" ").length - subEnc.split(" ").length;
-                subEnc = output.get(1);
-                words = map_original_tokens(sentence, subEnc);
-                instances.add(output.get(0));
-            } else {
-                words = map_original_tokens(sentence, subEnc);
-                instances.add(entity_code.getEncoding());
-            }
-        }
-        if (words != null) {
-            String output = sentence.getSentID() + "\t" + matchedPattern + "\t[";
-            for (String instance : instances) {
-                output += encodingMap.get(instance).getOriginalWord() + ", ";
-            }
-            output = output.substring(0, output.length() - 2) + "]\t" + words + "\n";
-            return output;
-        }
+//        List<String> instances = new ArrayList<>();
+//        Map<String, SubSentWords> encodingMap = sentence.getReverseWordEncoding();
+//        int adjust_length = 0;
+//        String words = null;
+//        List<SubSentWords> value = sentence.getSentenceBreakdown().get(subRoot);
+//        String subEnc = value.stream().map(SubSentWords::getEncoding).collect(Collectors.joining(" "));
+//        for (Integer entityPo : entityPos) {
+//            String entity_code = subEnc.split(" ")[entityPo + adjust_length];
+//            if (sentence.getReplaceSurfaceName().containsKey(trimEncoding(entity_code)) &&
+//                    !trimEncoding(entity_code).equals(subRoot.getTrimmedEncoding())) {
+//                List<String> output = hierarchical_expansion(sentence, subEnc, entity_code);
+//                adjust_length += output.get(1).split(" ").length - subEnc.split(" ").length;
+//                subEnc = output.get(1);
+//                words = map_original_tokens(sentence, subEnc);
+//                instances.add(output.get(0));
+//            } else {
+//                words = map_original_tokens(sentence, subEnc);
+//                instances.add(entity_code);
+//            }
+//        }
+//        if (words != null) {
+//            String output = sentence.getSentID() + "\t" + matchedPattern + "\t[";
+//            for (String instance : instances) {
+//                output += encodingMap.get(instance).getOriginalWord() + ", ";
+//            }
+//            output = output.substring(0, output.length() - 2) + "]\t" + words + "\n";
+//            return output;
+//        }
         return null;
     }
 
@@ -630,8 +636,7 @@ public class CPWW {
         int prevPatternCount = 0;
         int iterations = 1;
 
-        Map<String, Integer> sPattern;
-        Map<String, Integer> mPattern;
+        List<Map<String, Integer>> patternList = new ArrayList<>();
         if (!load_metapatternData) {
             logger.log(Level.INFO, "STARTING: Iterative Frequent Pattern Mining and Hierarchical Pushups");
             frequent_pattern_mining(iterations);
@@ -645,24 +650,23 @@ public class CPWW {
                 frequent_pattern_mining(++iterations);
             }
             savePatternClassificationData();
-            sPattern = returnSortedPatternList(singlePattern);
-            mPattern = returnSortedPatternList(multiPattern);
+            patternList.add(returnSortedPatternList(multiPattern));
+            patternList.add(returnSortedPatternList(singlePattern));
         } else {
-            sPattern = loadPatternClassificationData("single");
-            mPattern = loadPatternClassificationData("multi");
+            patternList.add(loadPatternClassificationData("multi"));
+            patternList.add(loadPatternClassificationData("single"));
             logger.log(Level.INFO, "COMPLETED: Loading Meta-Pattern Classification Data");
         }
         if (!load_sentenceBreakdownData) {
             saveSentenceBreakdown();
         }
 
-
         logger.log(Level.INFO, "STARTING: Pattern Matching");
         suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
         BufferedWriter patternOutput = new BufferedWriter(new FileWriter(outputDirectory + "_patternOutput" + suffix));
 
         for (SentenceProcessor sp : sentenceCollector) {
-            for (String output : patternFinding(sp, sPattern, mPattern)) {
+            for (String output : patternFinding(sp, patternList)) {
                 patternOutput.write(output);
             }
         }

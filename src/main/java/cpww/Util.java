@@ -170,7 +170,7 @@ public class Util {
         checkAndSetParameter (prop, "minimumSupport", "5");
         checkAndSetParameter (prop, "maxLength", "15");
         checkAndSetParameter (prop, "stopWordsFile", "stopWords.txt");
-        checkAndSetParameter (prop, "nerTypes", prop.getProperty("inputFolder") + "entityTypes.txt");
+        checkAndSetParameter (prop, "nerTypes", folderNameConsistency(prop.getProperty("inputFolder")) + "entityTypes.txt");
     }
 
     static List<String> readList(FileReader fr) throws IOException {
@@ -193,7 +193,19 @@ public class Util {
         return ans;
     }
 
+    static String folderNameConsistency(String folderName) {
+        String folder = folderName;
+        if (folder.charAt(folder.length() - 1) != '/') {
+            folder += "/";
+        }
+        return folder;
+    }
+
+    static String trimEncoding(String encoding) {
+        return encoding.split("_")[0];
+    }
+
     private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
-        return (double) maxNerCount(patternList) + metaPattern.split(" ").length/200.0;
+        return (double) maxNerCount(patternList) + metaPattern.split(" ").length/20.0;
     }
 }
