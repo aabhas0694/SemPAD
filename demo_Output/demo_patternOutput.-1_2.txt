@@ -8,9 +8,7 @@
 1783021_5	LOCATION n.y.	[Westhampton]	Westhampton , N.Y. ,
 1743758_1	history ORGANIZATION	[University of Michigan]	History , University of Michigan
 1743758_1	history ORGANIZATION	[University of Oklahoma]	History , University of Oklahoma
-1777275_1	PERSON say	[Gibson]	Mr. Gibson said he was looking forward to pitting his broadcast this fall .
 1777275_1	mr. PERSON say	[Gibson]	Mr. Gibson said he was looking forward to pitting his broadcast this fall .
-1777275_1	mr. PERSON	[Gibson]	Mr. Gibson said he was looking forward to pitting his broadcast this fall .
 1775921_1	PERSON say	[Bronson Arroyo]	Cincinnati Reds pitcher Bronson Arroyo said that even as a boy , Pierzynski was a feisty player .
 1641875_1	prince PERSON	[Harry]	But even by its standards , Prince Harry has broken new ground .
 1641875_1	prince PERSON	[Charles]	son of Prince Charles , the Princess , grandson , third in line to the throne
@@ -19,12 +17,12 @@
 1741625_1	PERSON say	[Markus Gandler]	Markus Gandler said at a news conference Tuesday in the mountain town .
 1747036_1	LOCATION n.y.	[Rockaway]	Rockaway , N.Y. ,
 1722598_4	mr. PERSON	[Weingarten]	As he looks to the past , Mr. Weingarten cites Jonathan Swift as early practitioners .
+1791903_2	ORGANIZATION chief executive	[Hewlett-Packard]	Pressure is mounting on Hewlett-Packard chief executive to explain what appears to have been a greater role .
 1791903_2	executive PERSON	[Mark V. Hurd]	executive , Mark V. Hurd ,
-1678161_1	PERSON say	[Beck]	Mr. Beck said in an interview that he had chosen a generic Arkansas dialect rather than a ` Saturday Night Live version .
 1678161_1	mr. PERSON say	[Beck]	Mr. Beck said in an interview that he had chosen a generic Arkansas dialect rather than a ` Saturday Night Live version .
-1678161_1	mr. PERSON	[Beck]	Mr. Beck said in an interview that he had chosen a generic Arkansas dialect rather than a ` Saturday Night Live version .
 1809518_2	executive PERSON	[Jeffrey B. Kindler]	executive , Jeffrey B. Kindler ,
 1809518_2	PERSON say	[Jeffrey B. Kindler]	Just last Thursday , Pfizer chief {{executive , Jeffrey B. Kindler ,}} said publicly that the drug could be among the most important new developments .
+1809518_2	ORGANIZATION chief executive	[Pfizer]	Just last Thursday , Pfizer chief executive said publicly that the drug could be among the most important new developments .
 1642483_1	PERSON of LOCATION	[M. Jodi Rell, Connecticut]	M. Jodi Rell of Connecticut
 1815244_1	PERSON of LOCATION	[Mikheil Saakashvili, Georgia]	Mikheil Saakashvili of Georgia
 1815244_1	president PERSON	[Mikheil Saakashvili]	President Mikheil Saakashvili has made reunification a central goal .
