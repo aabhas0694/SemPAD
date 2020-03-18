@@ -233,27 +233,26 @@ public class CPWW {
 
     /**
      *
-     * @param sentenceLemma -> Lemma words of the pushed up/ original subsentence being looked at
-     * @param sentenceEncode -> Encoding of the original subsentence
+     * @param sentence -> List of SubSentWords objects of pushed-up or original subsentence
      * @param currentNode -> index of the current word being looked at
      * @param cand_set -> Set of indices of all patterns having prevNode word
      * @param wordBagTemp -> Map of current status of pattern words being crossed out
      * @return if atleast one pattern is matched or not
      */
-    private static boolean treeSearch(List<String> sentenceLemma, List<String> sentenceEncode, int currentNode,
-                                      int prevNode, int entity, Set<Integer> cand_set, Map<Integer, List<String>> wordBagTemp){
+    private static boolean treeSearch(List<SubSentWords> sentence, int currentNode, int prevNode, int entity,
+                                      Set<Integer> cand_set, Map<Integer, List<String>> wordBagTemp){
         Set<Integer> candidateSet = new HashSet<>(cand_set);
         Map<Integer, List<String>> wordBag_temp = new HashMap<>(wordBagTemp);
         if (currentNode != entity) {
-            if (!allPattern_reverseIndex.containsKey(sentenceLemma.get(currentNode))) return false;
-            candidateSet.retainAll(new HashSet<>(allPattern_reverseIndex.get(sentenceLemma.get(currentNode))));
+            if (!allPattern_reverseIndex.containsKey(sentence.get(currentNode).getLemma())) return false;
+            candidateSet.retainAll(new HashSet<>(allPattern_reverseIndex.get(sentence.get(currentNode).getLemma())));
             if (candidateSet.isEmpty()) {
                 return false;
             }
             for (Integer index : candidateSet) {
                 if (wordBag_temp.containsKey(index)) {
                     List<String> temp = new ArrayList<>(wordBag_temp.get(index));
-                    temp.remove(sentenceLemma.get(currentNode));
+                    temp.remove(sentence.get(currentNode).getLemma());
                     wordBag_temp.put(index, temp);
                 }
                 if (wordBag_temp.get(index).size() == 0) {
@@ -263,20 +262,20 @@ public class CPWW {
         }
         boolean validPushUpScenario;
         for (int i = 65; i < 91; i++) {
-            String ch = sentenceEncode.get(currentNode) + (char)i;
-            int child = returnEncodeIndex(sentenceEncode, ch);
+            String ch = sentence.get(currentNode).getTrimmedEncoding() + (char)i;
+            int child = returnEncodeIndex(sentence, ch);
             if (child != -1 && (prevNode == entity || child != prevNode)) {
-                validPushUpScenario = treeSearch(sentenceLemma, sentenceEncode, child, currentNode, entity, candidateSet, wordBag_temp);
+                validPushUpScenario = treeSearch(sentence, child, currentNode, entity, candidateSet, wordBag_temp);
                 if (validPushUpScenario) {
                     return true;
                 }
             }
         }
-        String currentWordEncoding = sentenceEncode.get(currentNode);
-        if (currentWordEncoding.length() < sentenceEncode.get(prevNode).length()) {
-            int parent = returnEncodeIndex(sentenceEncode, currentWordEncoding.substring(0, currentWordEncoding.length() - 1));
+        String currentWordEncoding = sentence.get(currentNode).getTrimmedEncoding();
+        if (currentWordEncoding.length() < sentence.get(prevNode).getTrimmedEncoding().length()) {
+            int parent = returnEncodeIndex(sentence, currentWordEncoding.substring(0, currentWordEncoding.length() - 1));
             if (parent != -1) {
-                return treeSearch(sentenceLemma, sentenceEncode, parent, currentNode, entity, candidateSet, wordBag_temp);
+                return treeSearch(sentence, parent, currentNode, entity, candidateSet, wordBag_temp);
             }
         }
         return false;
@@ -284,19 +283,18 @@ public class CPWW {
 
     private static SubSentWords identify_entityLeaves(SubSentWords rootExp, SentenceProcessor wholeSentence){
         String root = rootExp.getLemma();
-        List<String> sentenceLemma = wholeSentence.getPushedUpSentences().getOrDefault(rootExp, wholeSentence.
-                getSentenceBreakdown().get(rootExp)).stream().map(SubSentWords::getLemma).collect(Collectors.toList());
-        List<String> sentenceEncode = wholeSentence.getSentenceBreakdown().get(rootExp).stream().
-                map(SubSentWords::getTrimmedEncoding).collect(Collectors.toList());
+        List<SubSentWords> sentence = wholeSentence.getPushedUpSentences().getOrDefault(rootExp, wholeSentence.
+                getSentenceBreakdown().get(rootExp));
+
         if (!allPattern_reverseIndex.containsKey(root)) return null;
         Set<Integer> root_index = new HashSet<>(allPattern_reverseIndex.get(root));
         List<String> typeSet = new ArrayList<>();
         List<Integer> specific_entities = new ArrayList<>();
-        for (int i = 0; i < sentenceLemma.size(); i++){
-            String word = sentenceLemma.get(i);
+        for (int i = 0; i < sentence.size(); i++){
+            SubSentWords word = sentence.get(i);
             for (String ner : nerTypes){
-                if (word.contains(ner) && allPattern_reverseIndex.containsKey(word)){
-                    Set<Integer> entity_index = new HashSet<>(allPattern_reverseIndex.get(word));
+                if (word.getLemma().contains(ner) && allPattern_reverseIndex.containsKey(word.getLemma())){
+                    Set<Integer> entity_index = new HashSet<>(allPattern_reverseIndex.get(word.getLemma()));
                     entity_index.retainAll(root_index);
                     if (entity_index.size() > 0) {
                         typeSet.add(ner);
@@ -317,7 +315,7 @@ public class CPWW {
         List<Integer> entities = new ArrayList<>();
         int longest_encode = 0;
         for (int i : specific_entities){
-            String subEnc = sentenceEncode.get(i);
+            String subEnc = sentence.get(i).getTrimmedEncoding();
             if (subEnc.length() > longest_encode){
                 entities.clear();
                 entities.add(i);
@@ -329,30 +327,56 @@ public class CPWW {
 
         List<SubSentWords> merge_ent_encode = new ArrayList<>();
         for (Integer entity : entities){
-            Set<Integer> candidate_set = new HashSet<>(allPattern_reverseIndex.get(sentenceLemma.get(entity)));
+            Set<Integer> candidate_set = new HashSet<>(allPattern_reverseIndex.get(sentence.get(entity).getLemma()));
             Map<Integer, List<String>> wordBag_temp = new HashMap<>(allPattern_Index);
             for (Integer index : candidate_set){
                 if (wordBag_temp.containsKey(index)){
                     List<String> temp = new ArrayList<>(wordBag_temp.get(index));
-                    temp.remove(sentenceLemma.get(entity));
+                    temp.remove(sentence.get(entity).getLemma());
                     wordBag_temp.put(index,temp);
                 }
             }
             boolean match_set = false;
-            String currentWordEncoding = sentenceEncode.get(entity);
-            int parent = returnEncodeIndex(sentenceEncode, currentWordEncoding.substring(0, currentWordEncoding.length()-1));
+            String currentWordEncoding = sentence.get(entity).getTrimmedEncoding();
+            int parent = returnEncodeIndex(sentence, currentWordEncoding.substring(0, currentWordEncoding.length()-1));
             if (parent != -1) {
-                match_set = treeSearch(sentenceLemma, sentenceEncode, parent, entity, entity, candidate_set, wordBag_temp);
+                match_set = treeSearch(sentence, parent, entity, entity, candidate_set, wordBag_temp);
             }
             if (match_set) {
                 if (merge_ent_encode.size() == 1) {
                     return null;
                 }
-                merge_ent_encode.add(wholeSentence.getPushedUpSentences().getOrDefault(rootExp,
-                        wholeSentence.getSentenceBreakdown().get(rootExp)).get(entity));
+                merge_ent_encode.add(sentence.get(entity));
             }
         }
         return merge_ent_encode.size() == 1 ? merge_ent_encode.get(0) : null;
+    }
+
+    private static void hierarchicalPushUp(SentenceProcessor sentence) {
+        sentence.resetPushUp();
+        List<SubSentWords> sortedSubKeys = new ArrayList<>(sort_leafToTop(sentence));
+        for (SubSentWords sub : sortedSubKeys) {
+            boolean termReplaced = false;
+            List<SubSentWords> subWords = new ArrayList<>(sentence.getSentenceBreakdown().get(sub));
+            if (!sentence.getReplaceSurfaceName().isEmpty()) {
+                for (int i = 0; i < subWords.size(); i++) {
+                    String encode = subWords.get(i).getTrimmedEncoding();
+                    if (sentence.getReplaceSurfaceName().containsKey(encode)) {
+                        termReplaced = true;
+                        SubSentWords replacement = new SubSentWords(sentence.getReplaceSurfaceName().get(encode));
+                        replacement.setEncoding(subWords.get(i).getEncoding());
+                        subWords.set(i, replacement);
+                    }
+                }
+            }
+            if (termReplaced) {
+                sentence.pushUpSentences(sub, subWords);
+            }
+            SubSentWords entityLeaf = identify_entityLeaves(sub, sentence);
+            if (entityLeaf != null) {
+                sentence.updateReplacedSurfaceName(sub.getTrimmedEncoding(), entityLeaf);
+            }
+        }
     }
 
     private static void buildSentences() throws Exception {
@@ -437,31 +461,6 @@ public class CPWW {
             line = patterns.readLine();
         }
         pattern_classification();
-    }
-
-    private static void hierarchicalPushUp(SentenceProcessor sentence) {
-        sentence.resetPushUp();
-        List<SubSentWords> sortedSubKeys = new ArrayList<>(sort_leafToTop(sentence));
-        for (SubSentWords sub : sortedSubKeys) {
-            boolean termReplaced = false;
-            List<SubSentWords> subWords = new ArrayList<>(sentence.getSentenceBreakdown().get(sub));
-            if (!sentence.getReplaceSurfaceName().isEmpty()) {
-                for (int i = 0; i < subWords.size(); i++) {
-                    String encode = subWords.get(i).getTrimmedEncoding();
-                    if (sentence.getReplaceSurfaceName().containsKey(encode)) {
-                        termReplaced = true;
-                        subWords.set(i, sentence.getReplaceSurfaceName().get(encode));
-                    }
-                }
-            }
-            if (termReplaced) {
-                sentence.pushUpSentences(sub, subWords);
-            }
-            SubSentWords entityLeaf = identify_entityLeaves(sub, sentence);
-            if (entityLeaf != null) {
-                sentence.updateReplacedSurfaceName(sub.getTrimmedEncoding(), entityLeaf);
-            }
-        }
     }
 
     private static List<String> patternFinding(SentenceProcessor sentence, List<Map<String, Integer>> patternList) {

@@ -115,9 +115,9 @@ public class Util {
         return false;
     }
 
-    static int returnEncodeIndex(List<String> encodeList, String encoding) {
+    static int returnEncodeIndex(List<SubSentWords> encodeList, String encoding) {
         for (int i = 0; i < encodeList.size(); i++) {
-            if (encodeList.get(i).equals(encoding)) {
+            if (encodeList.get(i).getTrimmedEncoding().equals(encoding)) {
                 return i;
             }
         }

@@ -29,6 +29,13 @@ public class SubSentWords implements Comparable, Serializable {
         this.index = index;
     }
 
+    public SubSentWords(SubSentWords subSentWords) {
+        this.word = subSentWords.getOriginalWord();
+        this.lemma = subSentWords.getLemma();
+        this.encoding = subSentWords.getEncoding();
+        this.index = subSentWords.getIndex();
+    }
+
     private String preprocess_rollup(String word) {
         List<String> ans = new ArrayList<>();
         String tok1 = word.replaceAll("\n","");
@@ -63,6 +70,10 @@ public class SubSentWords implements Comparable, Serializable {
 
     public void setWord(String word) {
         this.word = word;
+    }
+
+    public void setEncoding(String encode) {
+        this.encoding = encode;
     }
 
     @Override
