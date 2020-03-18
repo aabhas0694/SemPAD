@@ -24,6 +24,7 @@ public class CPWW {
     private static StanfordCoreNLP pipeline;
     private static boolean load_sentenceBreakdownData;
     private static boolean load_metapatternData;
+    private static int noOfPushUps;
 
     private static String[] nerTypes;
     private static List<String> stopWords;
@@ -64,6 +65,7 @@ public class CPWW {
         stopWords = readList(new FileReader(prop.getProperty("stopWordsFile")));
         load_sentenceBreakdownData = Boolean.parseBoolean(prop.getProperty("load_sentenceBreakdownData"));
         load_metapatternData = Boolean.parseBoolean(prop.getProperty("load_metapatternData"));
+        noOfPushUps = Integer.parseInt(prop.getProperty("noOfPushUps"));
 
         sentenceCollector = new ArrayList<>();
         FileHandler logFile = new FileHandler(outputFolder + data_name + "_logFile.txt");
@@ -422,20 +424,19 @@ public class CPWW {
         logger.log(Level.INFO, "COMPLETED: Saving Meta-Pattern Classification Data");
     }
 
-    private static Map<String, Integer> loadPatternClassificationData(String type) throws IOException {
-        logger.log(Level.INFO, "STARTING: Loading Meta-Pattern Classification Data");
-        String name = type.equals("multi") ? "_multiPatterns" : "_singlePatterns";
+    private static void loadPatternClassificationData() throws IOException {
+        String name = "_allPatterns";
         String directory = outputFolder + data_name;
         String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
         BufferedReader patterns = new BufferedReader(new FileReader(directory + name + suffix));
         String line = patterns.readLine();
-        Map<String, Integer> map = new HashMap<>();
+        frequentPatterns = new ArrayList<>();
         while (line != null) {
             String[] data = line.split("->");
-            map.put(data[0], Integer.valueOf(data[1]));
+            frequentPatterns.add(new MetaPattern(data[0], nerTypes, stopWords, Integer.parseInt(data[1])));
             line = patterns.readLine();
         }
-        return map;
+        pattern_classification();
     }
 
     private static void hierarchicalPushUp(SentenceProcessor sentence) {
@@ -537,34 +538,34 @@ public class CPWW {
         } else {
             buildDictionary();
             buildSentences();
+            saveSentenceBreakdown();
         }
         int prevPatternCount = 0;
         int iterations = 1;
 
         List<Map<String, Integer>> patternList = new ArrayList<>();
-        if (!load_metapatternData) {
-            logger.log(Level.INFO, "STARTING: Iterative Frequent Pattern Mining and Hierarchical Pushups");
-            frequent_pattern_mining(iterations);
-            while (prevPatternCount < allPattern.size()) {
-                prevPatternCount = allPattern.size();
-                logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
-                for (int i = 0; i < sentenceCollector.size(); i++) {
-                    hierarchicalPushUp(sentenceCollector.get(i));
-                }
-                logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations);
-                frequent_pattern_mining(++iterations);
-            }
-            savePatternClassificationData();
-            patternList.add(returnSortedPatternList(multiPattern));
-            patternList.add(returnSortedPatternList(singlePattern));
+        if (load_metapatternData) {
+            logger.log(Level.INFO, "STARTING: Meta-Patterns Loading and Classification");
+            loadPatternClassificationData();
+            noOfPushUps = 1;
         } else {
-            patternList.add(loadPatternClassificationData("multi"));
-            patternList.add(loadPatternClassificationData("single"));
-            logger.log(Level.INFO, "COMPLETED: Loading Meta-Pattern Classification Data");
+            logger.log(Level.INFO, "STARTING: Iterative Frequent Pattern Mining followed by Hierarchical Pushups");
+            frequent_pattern_mining(iterations);
         }
-        if (!load_sentenceBreakdownData) {
-            saveSentenceBreakdown();
+
+        while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
+            prevPatternCount = allPattern.size();
+            logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
+            for (SentenceProcessor sc : sentenceCollector) {
+                hierarchicalPushUp(sc);
+            }
+            logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
+            if (!load_metapatternData) frequent_pattern_mining(iterations);
         }
+        savePatternClassificationData();
+        logger.log(Level.INFO, "COMPLETED: Saving Meta-Patterns Classification Data");
+        patternList.add(returnSortedPatternList(multiPattern));
+        patternList.add(returnSortedPatternList(singlePattern));
 
         logger.log(Level.INFO, "STARTING: Pattern Matching");
         suffix = "." + noOfLines + "_" + minimumSupport + ".txt";

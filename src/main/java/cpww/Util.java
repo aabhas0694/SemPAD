@@ -171,6 +171,7 @@ public class Util {
         checkAndSetParameter (prop, "maxLength", "15");
         checkAndSetParameter (prop, "stopWordsFile", "stopWords.txt");
         checkAndSetParameter (prop, "nerTypes", folderNameConsistency(prop.getProperty("inputFolder")) + "entityTypes.txt");
+        checkAndSetParameter(prop, "noOfPushUps", "3");
     }
 
     static List<String> readList(FileReader fr) throws IOException {
