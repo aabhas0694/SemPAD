@@ -1,11 +1,14 @@
-PERSON say->5
+wife PERSON->4
+executive PERSON->4
+PERSON say->4
+ORGANIZATION chief executive->4
+chief executive PERSON->4
 mr. PERSON->4
 LOCATION n.y.->4
-executive PERSON->4
-history ORGANIZATION->2
 LOCATION of the ohl->2
 lw PERSON->2
+PERSON now live->2
 president PERSON->2
-mr. PERSON say->2
+history ORGANIZATION->2
 prince PERSON->2
-ORGANIZATION chief executive->2
+natural history ORGANIZATION->2

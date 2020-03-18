@@ -1,30 +1,36 @@
-Mar 16, 2020 2:29:26 PM cpww.CPWW buildDictionary
+Mar 17, 2020 11:37:31 PM cpww.CPWW buildDictionary
 INFO: STARTING: Dictionary Building
-Mar 16, 2020 2:29:29 PM cpww.CPWW buildDictionary
+Mar 17, 2020 11:37:34 PM cpww.CPWW buildDictionary
 INFO: COMPLETED: Dictionary Building
-Mar 16, 2020 2:29:29 PM cpww.CPWW buildSentences
+Mar 17, 2020 11:37:34 PM cpww.CPWW buildSentences
 INFO: STARTING: Sentences Processing
-Mar 16, 2020 2:29:52 PM cpww.CPWW buildSentences
+Mar 17, 2020 11:37:59 PM cpww.CPWW buildSentences
 INFO: COMPLETED: Sentences Processing
-Mar 16, 2020 2:29:52 PM cpww.CPWW call
+Mar 17, 2020 11:37:59 PM cpww.CPWW call
 INFO: STARTING: Iterative Frequent Pattern Mining and Hierarchical Pushups
-Mar 16, 2020 2:29:52 PM cpww.CPWW frequent_pattern_mining
+Mar 17, 2020 11:37:59 PM cpww.CPWW frequent_pattern_mining
 INFO: COMPLETED: Frequent Pattern Mining - Iteration 1
-Mar 16, 2020 2:29:52 PM cpww.CPWW call
+Mar 17, 2020 11:37:59 PM cpww.CPWW call
 INFO: STARTING: Hierarchical PushUps - Iteration 1
-Mar 16, 2020 2:29:52 PM cpww.CPWW call
+Mar 17, 2020 11:37:59 PM cpww.CPWW call
 INFO: COMPLETED: Hierarchical PushUps - Iteration 1
-Mar 16, 2020 2:29:53 PM cpww.CPWW frequent_pattern_mining
+Mar 17, 2020 11:37:59 PM cpww.CPWW frequent_pattern_mining
 INFO: COMPLETED: Frequent Pattern Mining - Iteration 2
-Mar 16, 2020 2:29:53 PM cpww.CPWW savePatternClassificationData
+Mar 17, 2020 11:37:59 PM cpww.CPWW call
+INFO: STARTING: Hierarchical PushUps - Iteration 2
+Mar 17, 2020 11:37:59 PM cpww.CPWW call
+INFO: COMPLETED: Hierarchical PushUps - Iteration 2
+Mar 17, 2020 11:37:59 PM cpww.CPWW frequent_pattern_mining
+INFO: COMPLETED: Frequent Pattern Mining - Iteration 3
+Mar 17, 2020 11:37:59 PM cpww.CPWW savePatternClassificationData
 INFO: STARTING: Saving Meta-Pattern Classification Data
-Mar 16, 2020 2:29:53 PM cpww.CPWW savePatternClassificationData
+Mar 17, 2020 11:37:59 PM cpww.CPWW savePatternClassificationData
 INFO: COMPLETED: Saving Meta-Pattern Classification Data
-Mar 16, 2020 2:29:53 PM cpww.CPWW saveSentenceBreakdown
+Mar 17, 2020 11:37:59 PM cpww.CPWW saveSentenceBreakdown
 INFO: STARTING: Sentence Breakdown Serialization
-Mar 16, 2020 2:29:53 PM cpww.CPWW saveSentenceBreakdown
+Mar 17, 2020 11:37:59 PM cpww.CPWW saveSentenceBreakdown
 INFO: COMPLETED: Sentence Breakdown Serialization
-Mar 16, 2020 2:29:53 PM cpww.CPWW call
+Mar 17, 2020 11:37:59 PM cpww.CPWW call
 INFO: STARTING: Pattern Matching
-Mar 16, 2020 2:29:53 PM cpww.CPWW call
+Mar 17, 2020 11:37:59 PM cpww.CPWW call
 INFO: COMPLETED: Pattern Matching

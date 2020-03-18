@@ -62,15 +62,18 @@ public class SentenceProcessor implements Serializable {
             int newIndex = node.index();
             boolean rootCheck = semanticGraph.getRoots().contains(node);
             List<IndexedWord> children = semanticGraph.getChildList(node);
+            boolean foundFirstModifier = false;
 
             for (IndexedWord child : children) {
-                if (rootCheck || !isSplitPoint(node, nerTypes)) {
+                if ((rootCheck && root.equals(node)) || !isSplitPoint(node, nerTypes)) {
                     search.offer(child);
-                } else {
+                } else if (isSplitPoint(node, nerTypes)) {
+                    boolean modifierCheck = isModifier(semanticGraph.getEdge(node, child));
+                    if (!foundFirstModifier && modifierCheck) foundFirstModifier = true;
                     if (root.equals(node)) {
-                        if (child.index() >= index) search.offer(child);
+                        if (child.index() >= index || foundFirstModifier) search.offer(child);
                     } else {
-                        if (child.index() <= newIndex) search.offer(child);
+                        if (child.index() <= newIndex && !foundFirstModifier) search.offer(child);
                     }
                 }
             }
@@ -113,6 +116,10 @@ public class SentenceProcessor implements Serializable {
 
     private boolean isSplitPoint(IndexedWord word, String[] nerTypes) {
         return word.tag().charAt(0) == 'N' || containsEntity(word.value(), nerTypes);
+    }
+
+    private boolean isModifier(SemanticGraphEdge edge) {
+        return edge.toString().contains("mod") || edge.toString().contains("compound");
     }
 
     public Map<String, SubSentWords> getReverseWordEncoding() {

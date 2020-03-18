@@ -115,13 +115,13 @@ public class Util {
         return false;
     }
 
-    static SubSentWords returnSubSentWord(List<SubSentWords> list, String encoding) {
-        for (SubSentWords w : list) {
-            if (w.getTrimmedEncoding().equals(encoding)) {
-                return w;
+    static int returnEncodeIndex(List<String> encodeList, String encoding) {
+        for (int i = 0; i < encodeList.size(); i++) {
+            if (encodeList.get(i).equals(encoding)) {
+                return i;
             }
         }
-        return null;
+        return -1;
     }
 
     static void updateMapCount(Map<String, List<Integer>> map, String token, Integer value) {
