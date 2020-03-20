@@ -34,7 +34,7 @@ public class Util {
         return l;
     }
 
-    static List<Integer> check_subsequence(List<String> main_sequence, List<String> encodings, boolean checkContinuity,
+    static List<Integer> check_subsequence(List<SubSentWords> main_sequence, boolean checkContinuity,
                                            String mainPattern, String[] nerTypes){
         String[] pattern = mainPattern.split(" ");
         int m = main_sequence.size(), n = pattern.length;
@@ -47,10 +47,10 @@ public class Util {
             int i = 0;
             solutionFound = true;
             for (int j = startingIndex ; j < m && i < n; j++) {
-                if (main_sequence.get(j).equals(pattern[i])) {
+                if (main_sequence.get(j).getLemma().equals(pattern[i])) {
                     storingIndex.add(j);
-                    patternTree.add(encodings.get(j));
-                    if (containsEntity(main_sequence.get(j), nerTypes)) {
+                    patternTree.add(main_sequence.get(j).getTrimmedEncoding());
+                    if (containsEntity(main_sequence.get(j).getLemma(), nerTypes)) {
                         ans.add(j);
                     }
                     i++;
@@ -62,15 +62,16 @@ public class Util {
                     for (String t : patternTree) {
                         if (!patternTree.contains(t.substring(0, t.length() - 1)) && !t.equals(root)) {
                             solutionFound = false;
-                            startingIndex = storingIndex.get(0) + 1;
-                            storingIndex.clear();
-                            patternTree.clear();
-                            ans.clear();
                             break;
                         }
                     }
-                    if (solutionFound) {
+                    if (solutionFound && noConjugateCheck(main_sequence, storingIndex)) {
                         return ans;
+                    } else {
+                        startingIndex = storingIndex.get(0) + 1;
+                        storingIndex.clear();
+                        patternTree.clear();
+                        ans.clear();
                     }
                 } else {
                     return ans;
@@ -208,5 +209,24 @@ public class Util {
 
     private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
         return (double) maxNerCount(patternList) + metaPattern.split(" ").length/20.0;
+    }
+
+    private static boolean noConjugateCheck(List<SubSentWords> mainSequence, List<Integer> storingIndex) {
+        List<String> encoding = storingIndex.stream().map(s -> mainSequence.get(s).getEncoding()).collect(Collectors.toList());
+        String parent = null;
+        for (String e : encoding) {
+            if (e.contains("conj")) {
+                parent = e.split("_")[0];
+                parent = parent.substring(0, parent.length() - 1);
+                break;
+            }
+        }
+        if (parent == null) return true;
+        for (String e : encoding) {
+            if (e.split("_")[0].equals(parent)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -8,15 +8,25 @@
 1793067_3	PERSON to LOCATION	[Nick Foligno, Sudbury]	LW Nick Foligno to Sudbury
 1793067_3	LOCATION of the ohl	[Sudbury]	Sudbury of the OHL
 1783021_5	LOCATION n.y.	[Westhampton]	Westhampton , N.Y. ,
+1743758_1	PERSON mich.	[Ann Arbor]	Ann Arbor , Mich. , Museum ; Lawrence .
+1743758_1	PERSON mich.	[Ann Arbor]	Ann Arbor , Mich. , Museum ; Lawrence .
+1743758_1	museum of ORGANIZATION	[University of Michigan]	Exhibit Museum of {{Natural History , University of Michigan}}
 1743758_1	natural history ORGANIZATION	[University of Michigan]	Natural History , University of Michigan
+1743758_1	PERSON okla.	[Norman]	Norman , Okla. , Museum
+1743758_1	PERSON okla.	[Okla.]	Conjunctions Found
+1743758_1	PERSON okla.	[Norman]	Norman , Okla. , Museum
+1743758_1	PERSON okla.	[Okla.]	Conjunctions Found
+1743758_1	museum of ORGANIZATION	[University of Oklahoma]	Sam Noble Oklahoma Museum of {{Natural History , University of Oklahoma}}
 1743758_1	natural history ORGANIZATION	[University of Oklahoma]	Natural History , University of Oklahoma
 1777275_1	mr. PERSON	[Gibson]	Mr. Gibson
 1777275_1	PERSON say	[Gibson]	Gibson said he was looking forward to pitting broadcast this fall .
 1775921_1	PERSON say	[Bronson Arroyo]	Bronson Arroyo said that player .
 1641875_1	prince PERSON	[Harry]	Prince Harry -- son --
 1641875_1	prince PERSON	[Charles]	Prince Charles and Diana
+1641875_1	prince PERSON	[Diana]	Conjunctions Found
 1798543_2	wife PERSON	[Alison]	my wife , Alison , and spaniel
 1772879_1	lw PERSON	[Fredrik Modin]	Traded LW Fredrik Modin and Fredrik Norrena
+1772879_1	lw PERSON	[Fredrik Norrena]	Conjunctions Found
 1702500_1	PERSON of LOCATION	[Tony Blair, Britain]	Prime Minister Tony Blair of Britain
 1741625_1	PERSON say	[Markus Gandler]	Markus Gandler said at a conference Tuesday in the town .
 1747036_1	LOCATION n.y.	[Rockaway]	Rockaway , N.Y. ,

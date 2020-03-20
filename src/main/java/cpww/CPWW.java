@@ -68,9 +68,6 @@ public class CPWW {
         noOfPushUps = Integer.parseInt(prop.getProperty("noOfPushUps"));
 
         sentenceCollector = new ArrayList<>();
-        FileHandler logFile = new FileHandler(outputFolder + data_name + "_logFile.txt");
-        logFile.setFormatter(new SimpleFormatter());
-        logger.addHandler(logFile);
 
         File dir = new File(inputFolder);
         if (!dir.exists()) {
@@ -80,6 +77,9 @@ public class CPWW {
         if (!dir.exists()) {
             dir.mkdir();
         }
+        FileHandler logFile = new FileHandler(outputFolder + data_name + "_logFile.txt");
+        logFile.setFormatter(new SimpleFormatter());
+        logger.addHandler(logFile);
     }
 
 //    public String replacedNER(String sentence) {
@@ -485,26 +485,24 @@ public class CPWW {
     private static String patternMatchingHelper(SentenceProcessor sentence, Map<SubSentWords, List<SubSentWords>> dict,
                                                 SubSentWords subRoot, List<Map<String, Integer>> patternList) {
         List<String> out = new ArrayList<>();
-        List<String> originalEncoding = sentence.getSentenceBreakdown().get(subRoot).stream().
-                map(SubSentWords::getTrimmedEncoding).collect(Collectors.toList());
+//        List<String> originalEncoding = sentence.getSentenceBreakdown().get(subRoot).stream().
+//                map(SubSentWords::getTrimmedEncoding).collect(Collectors.toList());
         List<Integer> matchedEntityPos;
         int multiCount = 0;
         for (int i = 0; i < 2; i++) {
             if (dict.containsKey(subRoot)) {
-                List<String> lemmaWords = dict.get(subRoot).stream().map(SubSentWords::getLemma).collect(Collectors.toList());
-                int endIndex = -1, startIndex = lemmaWords.size();
+//                List<String> lemmaWords = dict.get(subRoot).stream().map(SubSentWords::getLemma).collect(Collectors.toList());
+                List<SubSentWords> subSent = dict.get(subRoot);
+                int endIndex = -1, startIndex = subSent.size();
                 for (String metaPattern : patternList.get(i).keySet()) {
-                    List<Integer> nerIndices = check_subsequence(lemmaWords, originalEncoding, true,
-                            metaPattern, nerTypes);
+                    if (i != 0 && (multiCount > 0 || metaPattern.split(" ").length < 3)) break;
+                    List<Integer> nerIndices = check_subsequence(subSent, true, metaPattern, nerTypes);
                     if (nerIndices != null) {
                         int newStart = nerIndices.get(0), newEnd = nerIndices.get(nerIndices.size() - 1);
                         boolean check1 = (i != 0) ? (newStart > endIndex) : (newStart >= endIndex);
                         boolean check2 = (i != 0) ? (newEnd < startIndex) : (newEnd <= startIndex);
                         if (check1 || check2) {
                             if (i == 0) multiCount++;
-                            else {
-                                if (multiCount > 0) break;
-                            }
                             startIndex = Math.min(startIndex, newStart);
                             endIndex = Math.max(endIndex, newEnd);
                             matchedEntityPos = new ArrayList<>(nerIndices);
@@ -515,7 +513,8 @@ public class CPWW {
                 }
             }
         }
-        return out.isEmpty() ? null : String.join("", out);
+        return out.isEmpty() ? null : Arrays.stream(String.join("", out).split("\n")).
+                distinct().collect(Collectors.joining("\n")) + "\n";
     }
 
     public static void call() throws Exception{

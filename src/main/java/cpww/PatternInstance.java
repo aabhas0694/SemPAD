@@ -19,37 +19,31 @@ public class PatternInstance {
         this.metaPattern = metaPattern;
         this.sentID = sentence.getSentID();
         Map<String, SubSentWords> encodingMap = sentence.getReverseWordEncoding();
-        int adjust_length = 0;
         List<SubSentWords> value = sentence.getSentenceBreakdown().get(subRoot);
         List<String> subEnc = value.stream().map(SubSentWords::getEncoding).collect(Collectors.toList());
         String encoding = String.join(" ", subEnc);
         for (Integer entityPo : entityPos) {
-            String entity_code = encoding.split(" ")[entityPo + adjust_length];
+            String entity_code = subEnc.get(entityPo);
             if (sentence.getReplaceSurfaceName().containsKey(trimEncoding(entity_code)) &&
                     !trimEncoding(entity_code).equals(subRoot.getTrimmedEncoding())) {
                 List<String> output = hierarchical_expansion(sentence, encoding, entity_code);
                 this.entities.add(encodingMap.get(output.get(0)).getOriginalWord());
-                List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(encodingMap.get(output.get(0)));
-                this.alternateEntities.add(conjunctionSearch(output.get(0), entitySent));
-                adjust_length = output.get(1).split(" ").length - encoding.split(" ").length;
+                this.alternateEntities.add(conjunctionSearch(output.get(0), sentence));
                 encoding = output.get(1);
             } else {
                 this.entities.add(encodingMap.get(entity_code).getOriginalWord());
-                List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(encodingMap.get(entity_code));
-                if (entitySent == null) {
-                    System.out.println("Im here");
-                }
-                this.alternateEntities.add(conjunctionSearch(entity_code, entitySent));
+                this.alternateEntities.add(conjunctionSearch(entity_code, sentence));
             }
             this.sentenceInstance = map_original_tokens(sentence, encoding);
         }
     }
 
-    private static List<String> conjunctionSearch(String encoding, List<SubSentWords> subSent) {
+    private static List<String> conjunctionSearch(String encoding, SentenceProcessor sentence) {
+        List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(sentence.getReverseWordEncoding().get(encoding));
         List<String> ans = new ArrayList<>();
-        String pattern = "^" + encoding.split("_")[0] + "[\\s]_conj";
-        for (SubSentWords sw : subSent) {
-            if (Pattern.matches(pattern, sw.getEncoding())) {
+        String pattern = "^" + encoding.split("_")[0] + "[\\w]_conj";
+        for (SubSentWords sw : entitySent) {
+            if (Pattern.matches(pattern, sw.getEncoding()) && sentence.getSentenceBreakdown().containsKey(sw)) {
                 ans.add(sw.getOriginalWord());
             }
         }
