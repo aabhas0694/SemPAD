@@ -2,8 +2,7 @@ package cpww;
 
 import edu.stanford.nlp.ling.IndexedWord;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,7 +36,6 @@ public class SubSentWords implements Comparable, Serializable {
     }
 
     private String preprocess_rollup(String word) {
-        List<String> ans = new ArrayList<>();
         String tok1 = word.replaceAll("\n","");
         Pattern pattern = Pattern.compile("[A-Z]+[\\d]+");
         Matcher matcher = pattern.matcher(tok1);
@@ -70,6 +68,17 @@ public class SubSentWords implements Comparable, Serializable {
 
     public void setWord(String word) {
         this.word = word;
+    }
+
+    public void setWord(String entityExpression, Map<String, String> entityDict) {
+        String tok1 = entityExpression.replaceAll("\n","");
+        Pattern pattern = Pattern.compile("[A-Z]+[\\d]+");
+        Matcher matcher = pattern.matcher(tok1);
+        while (matcher.find()) {
+            String match = matcher.group();
+            tok1 = tok1.replace(match, entityDict.getOrDefault(match, match));
+        }
+        this.word = tok1;
     }
 
     public void setEncoding(String encode) {

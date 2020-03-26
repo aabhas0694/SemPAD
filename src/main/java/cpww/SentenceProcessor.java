@@ -1,7 +1,14 @@
 package cpww;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.TreeSet;
+import java.util.Queue;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.IndexedWord;
@@ -107,9 +114,11 @@ public class SentenceProcessor implements Serializable {
 
     private void generateReverseWordEncoding(Map<IndexedWord, String> encodeTree, Map<String, String> entityDict, String[] nerTypes) {
         for(Map.Entry<IndexedWord, String> entry : encodeTree.entrySet()){
-            SubSentWords word = new SubSentWords(entry.getKey(), entry.getValue(),
-                    this.containsEntity(entry.getKey().value(), nerTypes));
-            word.setWord(entityDict.getOrDefault(entry.getKey().value(), entry.getKey().value()));
+            boolean containsEntity = containsEntity(entry.getKey().value(), nerTypes);
+            SubSentWords word = new SubSentWords(entry.getKey(), entry.getValue(), containsEntity);
+            if (containsEntity) {
+                word.setWord(entry.getKey().value(), entityDict);
+            }
             this.reverseEncoding.put(entry.getValue(), word);
         }
     }

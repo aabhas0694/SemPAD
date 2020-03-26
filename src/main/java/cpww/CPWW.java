@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static cpww.Util.*;
 
@@ -384,26 +385,28 @@ public class CPWW {
         String inputFile = inputFolder + data_name + "_annotated.txt";
         BufferedReader reader = new BufferedReader(new FileReader(inputFile));
         String line = reader.readLine();
-        boolean indexGiven = false;
-        int lineNo = 1;
-        if (line != null && line.split("\t").length != 1) {
-            indexGiven = true;
-        }
+        List<String> sentences = new ArrayList<>();
+        int lineNo = 0;
+        final boolean indexGiven = (line != null && line.split("\t").length != 1);
         while (line != null) {
-            if (noOfLines > 0 && lineNo == noOfLines + 1) {
+            if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
             }
-            String sentence = indexGiven ? line.split("\t")[1] : line;
-            String index = indexGiven ? line.split("\t")[0] : String.valueOf(lineNo);
-
-            if (sentence != null && sentence.split(" ").length < 100) {
-                SentenceProcessor sp = new SentenceProcessor(pipeline, nerTypes, entityDictionary, sentence, index);
-                sentenceCollector.add(sp);
+            if (line.split(" ").length < 101) {
+                sentences.add(line);
             }
             line = reader.readLine();
             lineNo++;
         }
         reader.close();
+        SentenceProcessor[] tempStore = new SentenceProcessor[sentences.size()];
+        IntStream.range(0, sentences.size()).parallel().forEach(i -> {
+            String sent = sentences.get(i);
+            String sentence = indexGiven ? sent.split("\t")[1] : sent;
+            String index = indexGiven ? sent.split("\t")[0] : String.valueOf(i + 1);
+            tempStore[i] = new SentenceProcessor(pipeline, nerTypes, entityDictionary, sentence, index);
+        });
+        sentenceCollector = Arrays.stream(tempStore).collect(Collectors.toList());
         logger.log(Level.INFO, "COMPLETED: Sentences Processing");
     }
 
@@ -449,6 +452,7 @@ public class CPWW {
     }
 
     private static void loadPatternClassificationData() throws IOException {
+        logger.log(Level.INFO, "STARTING: Meta-Patterns Loading and Classification");
         String name = "_allPatterns";
         String directory = outputFolder + data_name;
         String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
@@ -461,37 +465,44 @@ public class CPWW {
             line = patterns.readLine();
         }
         pattern_classification();
+        logger.log(Level.INFO, "COMPLETED: Meta-Patterns Loading and Classification");
     }
 
-    private static List<String> patternFinding(SentenceProcessor sentence, List<Map<String, Integer>> patternList) {
-        List<String> ans = new ArrayList<>();
-        String output;
-        Map<SubSentWords, List<SubSentWords>> map;
-        for (SubSentWords subRoot : sentence.getSentenceBreakdown().keySet()) {
-            int iter = 1;
-            if (sentence.getPushedUpSentences().containsKey(subRoot)) {
-                iter++;
+    private static String patternFinding(SentenceProcessor sentence, List<Map<String, Integer>> patternList) throws Exception {
+        try {
+            List<String> ans = new ArrayList<>();
+            String output;
+            Map<SubSentWords, List<SubSentWords>> map;
+            for (SubSentWords subRoot : sentence.getSentenceBreakdown().keySet()) {
+                int iter = 1;
+                if (sentence.getPushedUpSentences().containsKey(subRoot)) {
+                    iter++;
+                }
+                while (iter > 0) {
+                    map = (iter == 2) ? sentence.getPushedUpSentences() : sentence.getSentenceBreakdown();
+                    output = patternMatchingHelper(sentence, map, subRoot, patternList);
+                    if (output != null) ans.add(output);
+                    iter--;
+                }
             }
-            while (iter > 0) {
-                map = (iter == 2) ? sentence.getPushedUpSentences() : sentence.getSentenceBreakdown();
-                output = patternMatchingHelper(sentence, map, subRoot, patternList);
-                if (output != null) ans.add(output);
-                iter--;
+            String answer = null;
+            if (!ans.isEmpty()) {
+                answer = Arrays.stream(String.join("", ans).split("\n")).distinct().map(s -> s + "\n").collect(Collectors.joining(""));
             }
+            return answer;
+        } catch (Exception e) {
+            logger.log(Level.WARNING,"ERROR in " + sentence.getSentID());
+            throw new Exception(e);
         }
-        return ans;
     }
 
     private static String patternMatchingHelper(SentenceProcessor sentence, Map<SubSentWords, List<SubSentWords>> dict,
                                                 SubSentWords subRoot, List<Map<String, Integer>> patternList) {
         List<String> out = new ArrayList<>();
-//        List<String> originalEncoding = sentence.getSentenceBreakdown().get(subRoot).stream().
-//                map(SubSentWords::getTrimmedEncoding).collect(Collectors.toList());
         List<Integer> matchedEntityPos;
         int multiCount = 0;
         for (int i = 0; i < 2; i++) {
             if (dict.containsKey(subRoot)) {
-//                List<String> lemmaWords = dict.get(subRoot).stream().map(SubSentWords::getLemma).collect(Collectors.toList());
                 List<SubSentWords> subSent = dict.get(subRoot);
                 int endIndex = -1, startIndex = subSent.size();
                 for (String metaPattern : patternList.get(i).keySet()) {
@@ -513,69 +524,85 @@ public class CPWW {
                 }
             }
         }
-        return out.isEmpty() ? null : Arrays.stream(String.join("", out).split("\n")).
-                distinct().collect(Collectors.joining("\n")) + "\n";
+        return out.isEmpty() ? null : String.join("", out);
     }
 
-    public static void call() throws Exception{
-        initialization();
-        String inputDirectory = inputFolder + data_name;
-        String outputDirectory = outputFolder + data_name;
-
-        boolean metadata_exists = new File(inputDirectory + "_dict.json").exists();
-        boolean annotatedDataExists = new File(inputDirectory + "_annotated.txt").exists();
-        if (!metadata_exists || !annotatedDataExists) {
-            throw new Exception("Required Files not found.");
-        }
-        String suffix = "." + noOfLines + ".txt";
-        boolean breakdownDataExists = new File(inputDirectory + "_sentenceBreakdown" + suffix).exists();
-        if (load_sentenceBreakdownData && breakdownDataExists) {
-            loadSentenceBreakdown();
-        } else if (load_sentenceBreakdownData && !breakdownDataExists) {
-            throw new IOException("Sentence Breakdown Data does not exist.");
-        } else {
-            buildDictionary();
-            buildSentences();
-            saveSentenceBreakdown();
-        }
-        int prevPatternCount = 0;
-        int iterations = 1;
-
-        List<Map<String, Integer>> patternList = new ArrayList<>();
-        if (load_metapatternData) {
-            logger.log(Level.INFO, "STARTING: Meta-Patterns Loading and Classification");
-            loadPatternClassificationData();
-            noOfPushUps = 1;
-        } else {
-            logger.log(Level.INFO, "STARTING: Iterative Frequent Pattern Mining followed by Hierarchical Pushups");
-            frequent_pattern_mining(iterations);
-        }
-
-        while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
-            prevPatternCount = allPattern.size();
-            logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
-            for (SentenceProcessor sc : sentenceCollector) {
-                hierarchicalPushUp(sc);
-            }
-            logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
-            if (!load_metapatternData) frequent_pattern_mining(iterations);
-        }
-        savePatternClassificationData();
-        logger.log(Level.INFO, "COMPLETED: Saving Meta-Patterns Classification Data");
-        patternList.add(returnSortedPatternList(multiPattern));
-        patternList.add(returnSortedPatternList(singlePattern));
-
+    private static void savePatternMatchingResults(List<Map<String, Integer>> patternList) throws Exception{
         logger.log(Level.INFO, "STARTING: Pattern Matching");
-        suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
+        String outputDirectory = outputFolder + data_name;
+        String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
         BufferedWriter patternOutput = new BufferedWriter(new FileWriter(outputDirectory + "_patternOutput" + suffix));
-
-        for (SentenceProcessor sp : sentenceCollector) {
-            for (String output : patternFinding(sp, patternList)) {
-                patternOutput.write(output);
+        String[] outputArray = new String[sentenceCollector.size()];
+        IntStream.range(0, sentenceCollector.size()).parallel().forEach(s -> {
+            try {
+                outputArray[s] = patternFinding(sentenceCollector.get(s), patternList);
+            } catch (Exception e) {
+                StringWriter errors = new StringWriter();
+                e.printStackTrace(new PrintWriter(errors));
+                logger.log(Level.WARNING, errors.toString());
             }
-        }
-
+        });
+        Arrays.stream(outputArray).forEachOrdered(s -> {
+            try {
+                if (s != null) patternOutput.write(s);
+            } catch (IOException e) {
+                StringWriter errors = new StringWriter();
+                e.printStackTrace(new PrintWriter(errors));
+                logger.log(Level.SEVERE, errors.toString());
+            }
+        });
         patternOutput.close();
         logger.log(Level.INFO, "COMPLETED: Pattern Matching");
+    }
+
+    public static void call() {
+        try {
+            initialization();
+            String inputDirectory = inputFolder + data_name;
+
+            boolean metadata_exists = new File(inputDirectory + "_dict.json").exists();
+            boolean annotatedDataExists = new File(inputDirectory + "_annotated.txt").exists();
+            if (!metadata_exists || !annotatedDataExists) {
+                throw new Exception("Required Files not found.");
+            }
+            String suffix = "." + noOfLines + ".txt";
+            boolean breakdownDataExists = new File(inputDirectory + "_sentenceBreakdown" + suffix).exists();
+            if (load_sentenceBreakdownData && breakdownDataExists) {
+                loadSentenceBreakdown();
+            } else if (load_sentenceBreakdownData && !breakdownDataExists) {
+                throw new IOException("Sentence Breakdown Data does not exist.");
+            } else {
+                buildDictionary();
+                buildSentences();
+                saveSentenceBreakdown();
+            }
+            int prevPatternCount = 0;
+            int iterations = 1;
+
+            List<Map<String, Integer>> patternList = new ArrayList<>();
+            if (load_metapatternData) {
+                loadPatternClassificationData();
+                noOfPushUps = 1;
+            } else {
+                logger.log(Level.INFO, "STARTING: Iterative Frequent Pattern Mining followed by Hierarchical Pushups");
+                frequent_pattern_mining(iterations);
+            }
+
+            while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
+                prevPatternCount = allPattern.size();
+                logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
+                sentenceCollector.parallelStream().forEach(CPWW::hierarchicalPushUp);
+                logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
+                if (!load_metapatternData) frequent_pattern_mining(iterations);
+            }
+            savePatternClassificationData();
+            patternList.add(returnSortedPatternList(multiPattern));
+            patternList.add(returnSortedPatternList(singlePattern));
+            savePatternMatchingResults(patternList);
+        } catch (Exception e) {
+            StringWriter errors = new StringWriter();
+            e.printStackTrace(new PrintWriter(errors));
+            logger.log(Level.SEVERE, errors.toString());
+        }
     }
 }

@@ -1,6 +1,5 @@
 package cpww;
 
-import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.process.Morphology;
 
@@ -164,8 +163,8 @@ public class Util {
     }
 
     static void setOptionalParameterDefaults(Properties prop) {
-        checkAndSetParameter (prop, "inputFolder", prop.getProperty("data_name") + "/");
-        checkAndSetParameter (prop, "outputFolder", prop.getProperty("data_name") + "_Output/");
+        checkAndSetParameter (prop, "inputFolder", "Data/" + prop.getProperty("data_name") + "/");
+        checkAndSetParameter (prop, "outputFolder", folderNameConsistency(prop.getProperty("inputFolder")) + "Output/");
         checkAndSetParameter (prop, "load_sentenceBreakdownData", "false");
         checkAndSetParameter (prop, "load_metapatternData", "false");
         checkAndSetParameter (prop, "minimumSupport", "5");

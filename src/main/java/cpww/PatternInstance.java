@@ -1,6 +1,7 @@
 package cpww;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -39,11 +40,17 @@ public class PatternInstance {
     }
 
     private static List<String> conjunctionSearch(String encoding, SentenceProcessor sentence) {
-        List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(sentence.getReverseWordEncoding().get(encoding));
+        SubSentWords subRoot = sentence.getReverseWordEncoding().get(encoding);
+        String encode = encoding.split("_")[0].replaceAll("\\[", "\\\\[");
+        List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(subRoot);
         List<String> ans = new ArrayList<>();
-        String pattern = "^" + encoding.split("_")[0] + "[\\w]_conj";
+        String conjPattern = "^" + encode + "[\\w]_conj";
+        String ccPattern = "^" + encode + "[\\w]_cc";
+        if (entitySent.parallelStream().anyMatch(sw -> Pattern.matches(ccPattern, sw.getEncoding()) && sw.getLemma().equals("but"))) {
+            return null;
+        }
         for (SubSentWords sw : entitySent) {
-            if (Pattern.matches(pattern, sw.getEncoding()) && sentence.getSentenceBreakdown().containsKey(sw)) {
+            if (Pattern.matches(conjPattern, sw.getEncoding()) && sw.getLemma().equals(subRoot.getLemma())) {
                 ans.add(sw.getOriginalWord());
             }
         }
@@ -59,7 +66,8 @@ public class PatternInstance {
 
         List<String> ans = new ArrayList<>();
         ans.add(replace_encode.getEncoding());
-        if (original_subEnc.contains(replace_encode.getEncoding()) || replace_encode.getEncoding().equals(entityEncode)) {
+        if (Arrays.asList(original_subEnc.replaceAll("[{}]", "").split(" ")).contains(replace_encode.getEncoding())
+                || replace_encode.getEncoding().equals(entityEncode)) {
             // Do nothing
         } else if (original_subEnc.contains(" " + entityEncode + " ")) {
             original_subEnc = original_subEnc.replace(" " + entityEncode + " ", " {{" + added_subEnc + "}} ");
@@ -124,7 +132,8 @@ public class PatternInstance {
                         if (i + 1 != entities.size()) {
                             temp.addAll(entities.subList(i + 1, entities.size()));
                         }
-                        output += String.join(", ", temp) + "]\tConjunctions Found\n";
+                        output += String.join(", ", temp) + "]\tCONJUNCTION FOUND: " +
+                                sentenceInstance.replace(entities.get(i), alternateEntities.get(i).get(j)) + "\n";
                     }
                 }
             }
