@@ -392,7 +392,7 @@ public class CPWW {
             if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
             }
-            if (line.split(" ").length < 101) {
+            if (line.split(" ").length > 4 && line.split(" ").length < 101) {
                 sentences.add(line);
             }
             line = reader.readLine();
