@@ -10,6 +10,8 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -364,21 +366,26 @@ public class CPWW {
         int lineNo = 0;
         final boolean indexGiven = (line != null && line.split("\t").length != 1);
         int phraseCount = 0;
+        Pattern pattern = Pattern.compile("[\\w\\d]+_[\\w\\d]+");
         while (line != null) {
             if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
             }
-            String[] sent = line.split(" ");
-            if (sent.length > 4 && sent.length < 101) {
-                for (int i = 0; i < sent.length; i++) {
-                    String word = sent[i];
-                    if (word.contains("_")) {
+            String index = line.split("\t")[0];
+            String sent = line.split("\t")[1];
+            if (sent.split(" ").length > 4 && sent.split(" ").length < 100) {
+                Matcher matcher = pattern.matcher(sent);
+                Set<String> foundMatches = new HashSet<>();
+                while (matcher.find()) {
+                    String match = matcher.group();
+                    if (!foundMatches.contains(match)) {
+                        foundMatches.add(match);
                         String newEntity = "PHRASEGEN" + phraseCount++;
-                        entityDictionary.put(newEntity, word);
-                        sent[i] = newEntity;
+                        sent = sent.replace(match, newEntity);
+                        entityDictionary.put(newEntity, match);
                     }
                 }
-                sentences.add(String.join(" ", sent));
+                sentences.add(index + "\t" + sent);
             }
             line = reader.readLine();
             lineNo++;
@@ -386,7 +393,7 @@ public class CPWW {
         reader.close();
         SentenceProcessor[] tempStore = new SentenceProcessor[sentences.size()];
         IntStream.range(0, sentences.size()).parallel().forEach(i -> {
-           String sent = sentences.get(i);
+            String sent = sentences.get(i);
             String sentence = indexGiven ? sent.split("\t")[1] : sent;
             String index = indexGiven ? sent.split("\t")[0] : String.valueOf(i + 1);
             tempStore[i] = new SentenceProcessor(pipeline, nerTypes, entityDictionary, sentence, index);
