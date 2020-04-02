@@ -6,34 +6,30 @@ import java.util.stream.Collectors;
 public class MetaPattern {
     private String metaPattern;
     private String clippedMetaPattern;
-    private int nerCount;
     private boolean valid = true;
     private Set<String> entityContainingWords = new HashSet<>();
-    private List<String> entities = new ArrayList<>();
+    private List<Integer> entityIndex = new ArrayList<>();
     private Integer frequency = 0;
 
     MetaPattern(String pat, String[] nerTypes, List<String> stopWords, int frequency) {
-        this.setMetaPattern(pat);
-        this.setNerCount(this.noOfEntities(nerTypes));
+        this.processPattern(pat, nerTypes);
         this.setClippedMetaPattern(stopWords);
         this.setFrequency(frequency);
     }
 
-    private int noOfEntities(String[] nerTypes) {
-        int nerNo = 0;
-        String[] splitPattern = this.metaPattern.split(" ");
-
-        for (String pat : splitPattern) {
+    private void processPattern(String pattern, String[] nerTypes) {
+        this.metaPattern = pattern;
+        String[] splitPattern = pattern.split(" ");
+        for (int i= 0; i < splitPattern.length; i++) {
+            String pat = splitPattern[i];
             for (String ner : nerTypes) {
                 if (pat.contains(ner)) {
                     this.entityContainingWords.add(pat);
-                    this.entities.add(ner);
-                    nerNo++;
+                    this.entityIndex.add(i);
                     break;
                 }
             }
         }
-        return nerNo;
     }
 
     private void setFrequency(Integer frequency) {
@@ -44,14 +40,6 @@ public class MetaPattern {
         return this.frequency;
     }
 
-    private void setMetaPattern(String mp) {
-        this.metaPattern = mp;
-    }
-
-    private void setNerCount(int count) {
-        this.nerCount = count;
-    }
-
     /**
     Returns true if there exist conjunctions in a pattern
      */
@@ -60,8 +48,25 @@ public class MetaPattern {
         return splitPattern.contains("and") || splitPattern.contains("or") || splitPattern.contains("but");
     }
 
+    /**
+     * Checks if all entities are not placed one after the other at consecutive positions.
+     * @return If so, returns true, else false.
+     */
+    private boolean isEntityContinuous() {
+        if (getNerCount() == 0) return true;
+        else if (getNerCount() == 1) return false;
+        String[] splitPattern = this.metaPattern.split(" ");
+        for (int i = 0; i < entityIndex.size() - 1; i++) {
+            int i1 = entityIndex.get(i), i2 = entityIndex.get(i + 1);
+            if (i1 + 1 == i2 && splitPattern[i1].equals(splitPattern[i2])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void setClippedMetaPattern(List<String> stopWords) {
-        if (this.getNerCount() == 0) {
+        if (isEntityContinuous()) {
             this.valid = false;
             this.clippedMetaPattern = null;
             return;
@@ -89,8 +94,8 @@ public class MetaPattern {
                 }
             }
         }
-        if (startIndex >= endIndex || (this.entityContainingWords.size() < this.nerCount &&
-                endIndex - startIndex < this.nerCount) || this.nerCount > 1 && endIndex - startIndex == this.nerCount - 1) {
+        if (startIndex >= endIndex || (this.entityContainingWords.size() < getNerCount() &&
+                endIndex - startIndex < getNerCount()) || getNerCount() > 1 && endIndex - startIndex == getNerCount() - 1) {
             this.valid = false;
             this.clippedMetaPattern = null;
             return;
@@ -105,19 +110,11 @@ public class MetaPattern {
         return this.valid;
     }
 
-    String getClippedMetaPattern() {
+    public String getClippedMetaPattern() {
         return clippedMetaPattern;
     }
     
-    public Set<String> getEntityContainingWords() {
-        return this.entityContainingWords;
-    }
-    
-    public List<String> getEntities() {
-        return this.entities;
-    }
-
     public int getNerCount() {
-        return nerCount;
+        return entityIndex.size();
     }
 }

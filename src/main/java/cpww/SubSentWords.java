@@ -14,9 +14,8 @@ public class SubSentWords implements Comparable, Serializable {
     private String encoding;
     private int index;
 
-    public SubSentWords(IndexedWord iw, String encode, boolean isEntity) {
-        this.word = iw.value();
-        this.lemma = isEntity ? this.preprocess_rollup(this.getOriginalWord()) : returnLowercaseLemma(iw);
+    public SubSentWords(IndexedWord iw, String encode, boolean isEntity, Map<String, String> entityDict) {
+        setWordAndLemma(iw, entityDict, isEntity);
         this.encoding = encode;
         this.index = iw.index();
     }
@@ -70,15 +69,22 @@ public class SubSentWords implements Comparable, Serializable {
         this.word = word;
     }
 
-    public void setWord(String entityExpression, Map<String, String> entityDict) {
-        String tok1 = entityExpression.replaceAll("\n","");
+    private void setWordAndLemma(IndexedWord entity, Map<String, String> entityDict, boolean isEntity) {
+        String tok1 = entity.value().replaceAll("\n","");
+        this.lemma = tok1;
+        this.word = tok1;
         Pattern pattern = Pattern.compile("[A-Z]+[\\d]+");
         Matcher matcher = pattern.matcher(tok1);
+        boolean patternFound = false;
         while (matcher.find()) {
             String match = matcher.group();
-            tok1 = tok1.replace(match, entityDict.getOrDefault(match, match));
+            patternFound = true;
+            this.word = this.word.replace(match, entityDict.getOrDefault(match, match));
+            this.lemma = isEntity ? this.lemma.replace(match, match.replaceAll("([A-Z]+)(\\d)+","$1")) : this.word;
         }
-        this.word = tok1;
+        if (!isEntity) {
+            this.lemma = patternFound ? this.lemma.toLowerCase() : returnLowercaseLemma(entity);
+        }
     }
 
     public void setEncoding(String encode) {

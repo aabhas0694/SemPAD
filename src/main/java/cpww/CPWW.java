@@ -83,31 +83,6 @@ public class CPWW {
         logger.addHandler(logFile);
     }
 
-//    public String replacedNER(String sentence) {
-//        String[] arr = sentence.replaceAll("\n","").split(" ");
-//        if (arr.length <5 || !Character.isLetter(sentence.charAt(0))) {
-//            return null;
-//        }
-//        for (int i = 0; i < arr.length; i++) {
-//            String orig = arr[i].replaceAll("([A-Z]+_[A-Z0-9)]+_[\\w']+(._)*[\\w']*)\\s*", "$1");
-//            Pattern pattern = Pattern.compile("_[\\w']+(._)*[\\w']*");
-//            Matcher matcher = pattern.matcher(orig);
-//            arr[i] = orig.replaceAll("([A-Z]+)_[A-Z0-9)]+_[\\w']+(._)*[\\w']*","$1");
-//
-//            for (String ner : nerTypes) {
-//                if (arr[i].contains(ner.toUpperCase())) {
-//                    arr[i] = arr[i].replaceAll(ner.toUpperCase(), ner.toUpperCase() + (++nerCount));
-//                    if (matcher.find()) {
-//                        String match = matcher.group().replaceFirst("_[A-Z0-9]+_","");
-//                        this.entityDictionary.put(ner.toUpperCase() + nerCount, match);
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-//        return String.join(" ", arr).replaceAll("(_)+", "-");
-//    }
-
     private static void frequent_pattern_mining(int iteration) throws  IOException{
         frequentPatterns.clear();
 
@@ -388,12 +363,22 @@ public class CPWW {
         List<String> sentences = new ArrayList<>();
         int lineNo = 0;
         final boolean indexGiven = (line != null && line.split("\t").length != 1);
+        int phraseCount = 0;
         while (line != null) {
             if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
             }
-            if (line.split(" ").length > 4 && line.split(" ").length < 101) {
-                sentences.add(line);
+            String[] sent = line.split(" ");
+            if (sent.length > 4 && sent.length < 101) {
+                for (int i = 0; i < sent.length; i++) {
+                    String word = sent[i];
+                    if (word.contains("_")) {
+                        String newEntity = "PHRASEGEN" + phraseCount++;
+                        entityDictionary.put(newEntity, word);
+                        sent[i] = newEntity;
+                    }
+                }
+                sentences.add(String.join(" ", sent));
             }
             line = reader.readLine();
             lineNo++;
@@ -401,7 +386,7 @@ public class CPWW {
         reader.close();
         SentenceProcessor[] tempStore = new SentenceProcessor[sentences.size()];
         IntStream.range(0, sentences.size()).parallel().forEach(i -> {
-            String sent = sentences.get(i);
+           String sent = sentences.get(i);
             String sentence = indexGiven ? sent.split("\t")[1] : sent;
             String index = indexGiven ? sent.split("\t")[0] : String.valueOf(i + 1);
             tempStore[i] = new SentenceProcessor(pipeline, nerTypes, entityDictionary, sentence, index);

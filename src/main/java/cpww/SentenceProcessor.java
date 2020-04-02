@@ -19,6 +19,8 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 
+import static cpww.Util.containsEntity;
+
 public class SentenceProcessor implements Serializable {
     private String sentence;
     private String sentID;
@@ -103,22 +105,10 @@ public class SentenceProcessor implements Serializable {
         return map;
     }
 
-    private boolean containsEntity(String subRoot, String[] nerTypes) {
-        for (String ner : nerTypes) {
-            if (subRoot.contains(ner)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void generateReverseWordEncoding(Map<IndexedWord, String> encodeTree, Map<String, String> entityDict, String[] nerTypes) {
         for(Map.Entry<IndexedWord, String> entry : encodeTree.entrySet()){
             boolean containsEntity = containsEntity(entry.getKey().value(), nerTypes);
-            SubSentWords word = new SubSentWords(entry.getKey(), entry.getValue(), containsEntity);
-            if (containsEntity) {
-                word.setWord(entry.getKey().value(), entityDict);
-            }
+            SubSentWords word = new SubSentWords(entry.getKey(), entry.getValue(), containsEntity, entityDict);
             this.reverseEncoding.put(entry.getValue(), word);
         }
     }
