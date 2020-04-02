@@ -18,8 +18,11 @@ public class MetaPattern {
     }
 
     private void processPattern(String pattern, String[] nerTypes) {
-        this.metaPattern = pattern;
-        String[] splitPattern = pattern.split(" ");
+       this.metaPattern = Arrays.stream(pattern.split(" "))
+               .filter(word -> !word.matches("[`'\\.,:;\\!\\-\\|\"]+|\\-lrb\\-|\\-lsb\\-|\\-rrb\\-|\\-rsb\\-"))
+               .collect(Collectors.joining(" "));
+
+        String[] splitPattern = this.metaPattern.split(" ");
         for (int i= 0; i < splitPattern.length; i++) {
             String pat = splitPattern[i];
             for (String ner : nerTypes) {
@@ -45,7 +48,7 @@ public class MetaPattern {
      */
     private boolean checkConjunction(String pattern) {
         List<String> splitPattern = Arrays.asList(pattern.split(" "));
-        return splitPattern.contains("and") || splitPattern.contains("or") || splitPattern.contains("but");
+        return ((splitPattern.contains("and") || splitPattern.contains("or"))  && !splitPattern.contains("between")) || splitPattern.contains("but");
     }
 
     /**
@@ -72,22 +75,19 @@ public class MetaPattern {
             return;
         }
 
-        List<String> splitPattern = Arrays.asList(this.metaPattern.split(" ")).stream().
-                filter(word -> !word.matches("[`'\\.,:;\\!\\-\\|\"]+|\\-lrb\\-|\\-lsb\\-|\\-rrb\\-|\\-rsb\\-"))
-                .collect(Collectors.toList());
-
-        int startIndex = 0, endIndex = splitPattern.size() - 1;
+        String[] splitPattern = this.metaPattern.split(" ");
+        int startIndex = 0, endIndex = splitPattern.length - 1;
         boolean foundStart = false, foundEnd = false;
         while (startIndex < endIndex && (!foundStart || !foundEnd)) {
             if (!foundStart) {
-                if (!stopWords.contains(splitPattern.get(startIndex))) {
+                if (!stopWords.contains(splitPattern[startIndex])) {
                     foundStart = true;
                 } else {
                     startIndex++;
                 }
             }
             if (!foundEnd) {
-                if (!stopWords.contains(splitPattern.get(endIndex))) {
+                if (!stopWords.contains(splitPattern[endIndex])) {
                     foundEnd = true;
                 } else {
                     endIndex--;
@@ -100,7 +100,7 @@ public class MetaPattern {
             this.clippedMetaPattern = null;
             return;
         }
-        this.clippedMetaPattern = String.join(" ", splitPattern.subList(startIndex, endIndex + 1));
+        this.clippedMetaPattern = String.join(" ", Arrays.copyOfRange(splitPattern, startIndex, endIndex + 1));
         if (this.checkConjunction(this.clippedMetaPattern)) {
             this.valid = false;
         }

@@ -46,7 +46,8 @@ public class PatternInstance {
         List<String> ans = new ArrayList<>();
         String conjPattern = "^" + encode + "[\\w]_conj";
         String ccPattern = "^" + encode + "[\\w]_cc";
-        if (entitySent.parallelStream().anyMatch(sw -> Pattern.matches(ccPattern, sw.getEncoding()) && sw.getLemma().equals("but"))) {
+        if (entitySent.parallelStream().anyMatch(sw -> Pattern.matches(ccPattern, sw.getEncoding())
+                && (sw.getLemma().equals("but") || sw.getLemma().equals("between")))) {
             return null;
         }
         for (SubSentWords sw : entitySent) {
