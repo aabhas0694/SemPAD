@@ -80,7 +80,8 @@ public class CPWW {
         if (!dir.exists()) {
             dir.mkdir();
         }
-        FileHandler logFile = new FileHandler(outputFolder + data_name + "_logFile.txt");
+        String logFileSuffix = data_name + "_logFile." + noOfLines + "_" + minimumSupport;
+        FileHandler logFile = new FileHandler(outputFolder + logFileSuffix + ".txt");
         logFile.setFormatter(new SimpleFormatter());
         logger.addHandler(logFile);
     }
