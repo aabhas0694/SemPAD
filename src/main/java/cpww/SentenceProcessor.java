@@ -98,6 +98,7 @@ public class SentenceProcessor implements Serializable {
         map.put(r, coding);
         int i = 0;
         for (SemanticGraphEdge edge : semanticGraph.getOutEdgesSorted(r)) {
+            i = (i == 26) ? 97 : i;
             char ch = (char) ((int) 'A' + i++);
             String new_coding = coding.split("_")[0] + ch + '_' + edge.getRelation();
             map = encodeTree(semanticGraph, edge.getDependent(), new_coding, map);
