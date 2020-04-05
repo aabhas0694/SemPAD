@@ -372,8 +372,8 @@ public class CPWW {
             if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
             }
-            String index = line.split("\t")[0];
-            String sent = line.split("\t")[1];
+            String index = indexGiven ? line.split("\t")[0] : String.valueOf(lineNo);
+            String sent = indexGiven ? line.split("\t")[1] : line;
             if (sent.split(" ").length > 4 && sent.split(" ").length < 100) {
                 Matcher matcher = pattern.matcher(sent);
                 Set<String> foundMatches = new HashSet<>();
