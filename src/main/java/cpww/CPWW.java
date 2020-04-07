@@ -392,6 +392,7 @@ public class CPWW {
             lineNo++;
         }
         reader.close();
+        logger.log(Level.INFO, "Total Number of Sentences: " + sentenceCollector.size());
         sentenceCollector.parallelStream().forEach(s -> s.processSentence(pipeline, entityDictionary, nerTypes));
         logger.log(Level.INFO, "COMPLETED: Sentences Processing");
     }
