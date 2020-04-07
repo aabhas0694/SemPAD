@@ -29,16 +29,13 @@ public class SentenceProcessor implements Serializable {
     private Map<String, SubSentWords> replaceSurfaceName = new HashMap<>();
     private Map<SubSentWords, List<SubSentWords>> pushedUpSentences = new HashMap<>();
 
-    public SentenceProcessor(StanfordCoreNLP pipeline, String[] nerTypes, Map<String, String> entityDictionary,
-                             String sentence, String sentID) {
-        super();
-        processSentence(sentence, sentID, pipeline, entityDictionary, nerTypes);
+    public SentenceProcessor(String text, String sentID) {
+        setSentenceAndID(text, sentID);
     }
 
-    public void processSentence(String text, String sentID, StanfordCoreNLP pipeline, Map<String, String> entityDict, String[] nerTypes) {
-        this.sentence = text;
-        this.sentID = sentID;
-        SemanticGraph semanticGraph = generateSemanticGraph(text, pipeline);
+    public void processSentence(StanfordCoreNLP pipeline, Map<String, String> entityDict, String[] nerTypes) {
+        if (this.sentence == null) return;
+        SemanticGraph semanticGraph = generateSemanticGraph(this.sentence, pipeline);
         Map<IndexedWord, String> encodeTree = encodeTree(semanticGraph, semanticGraph.getFirstRoot(), "A_root", new HashMap<>());
         generateReverseWordEncoding(encodeTree, entityDict, nerTypes);
         Map<IndexedWord, TreeSet<IndexedWord>> subTree = splitNoun(semanticGraph.getFirstRoot(), new HashMap<>(),  semanticGraph, nerTypes);
@@ -141,6 +138,11 @@ public class SentenceProcessor implements Serializable {
 
     public Map<SubSentWords, List<SubSentWords>> getSentenceBreakdown() {
         return this.sentenceBreakdown;
+    }
+
+    private void setSentenceAndID(String text, String id) {
+        this.sentence = text;
+        this.sentID = id;
     }
 
     public void pushUpSentences(SubSentWords encode, List<SubSentWords> value) {

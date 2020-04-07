@@ -363,7 +363,7 @@ public class CPWW {
         String inputFile = inputFolder + data_name + "_annotated.txt";
         BufferedReader reader = new BufferedReader(new FileReader(inputFile));
         String line = reader.readLine();
-        List<String> sentences = new ArrayList<>();
+
         int lineNo = 0;
         final boolean indexGiven = (line != null && line.split("\t").length != 1);
         int phraseCount = 0;
@@ -386,20 +386,13 @@ public class CPWW {
                         entityDictionary.put(newEntity, match);
                     }
                 }
-                sentences.add(index + "\t" + sent);
+                sentenceCollector.add(new SentenceProcessor(sent, index));
             }
             line = reader.readLine();
             lineNo++;
         }
         reader.close();
-        SentenceProcessor[] tempStore = new SentenceProcessor[sentences.size()];
-        IntStream.range(0, sentences.size()).parallel().forEach(i -> {
-            String sent = sentences.get(i);
-            String sentence = indexGiven ? sent.split("\t")[1] : sent;
-            String index = indexGiven ? sent.split("\t")[0] : String.valueOf(i + 1);
-            tempStore[i] = new SentenceProcessor(pipeline, nerTypes, entityDictionary, sentence, index);
-        });
-        sentenceCollector = Arrays.stream(tempStore).collect(Collectors.toList());
+        sentenceCollector.parallelStream().forEach(s -> s.processSentence(pipeline, entityDictionary, nerTypes));
         logger.log(Level.INFO, "COMPLETED: Sentences Processing");
     }
 
