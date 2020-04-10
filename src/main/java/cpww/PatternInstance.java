@@ -51,7 +51,8 @@ public class PatternInstance {
             return null;
         }
         for (SubSentWords sw : entitySent) {
-            if (Pattern.matches(conjPattern, sw.getEncoding()) && sw.getLemma().equals(subRoot.getLemma())) {
+            if (Pattern.matches(conjPattern, sw.getEncoding()) && sw.getLemma().equals(subRoot.getLemma()) &&
+            sentence.getSentenceBreakdown().get(sw).size() == 1) {
                 ans.add(sw.getOriginalWord());
             }
         }

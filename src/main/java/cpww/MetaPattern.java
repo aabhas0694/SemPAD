@@ -19,7 +19,7 @@ public class MetaPattern {
 
     private void processPattern(String pattern, String[] nerTypes) {
        this.metaPattern = Arrays.stream(pattern.split(" "))
-               .filter(word -> !word.matches("[`'\\.,:;\\!\\-\\|\"]+|\\-lrb\\-|\\-lsb\\-|\\-rrb\\-|\\-rsb\\-"))
+               .filter(word -> !word.matches("[`$\\d'\\.,\\*:;\\!\\-\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d'\\.,\\*:;\\!\\-\\|\"\\\\]*"))
                .collect(Collectors.joining(" "));
 
         String[] splitPattern = this.metaPattern.split(" ");

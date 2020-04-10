@@ -6,6 +6,7 @@ import edu.stanford.nlp.process.Morphology;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Util {
     public static int sum(List<Integer> abc){
@@ -172,6 +173,7 @@ public class Util {
         checkAndSetParameter (prop, "stopWordsFile", "stopWords.txt");
         checkAndSetParameter (prop, "nerTypes", folderNameConsistency(prop.getProperty("inputFolder")) + "entityTypes.txt");
         checkAndSetParameter(prop, "noOfPushUps", "3");
+        checkAndSetParameter(prop, "includeContext", "true");
     }
 
     static List<String> readList(FileReader fr) throws IOException {
@@ -206,6 +208,48 @@ public class Util {
         return encoding.split("_")[0];
     }
 
+    static String createContextString(List<String> patternOutputs) {
+        Set<Integer> isSingleEntityPattern = new HashSet<>();
+        Map<Integer, Set<Integer>> finalContextMapping = new HashMap<>();
+        Map<String, List<Integer>> wordWisePatterns = new HashMap<>();
+
+        for (int i = 0; i < patternOutputs.size(); i++) {
+            List<String> entityList = returnEntitiesFromPattern(patternOutputs.get(i));
+            if (entityList.size() > 1) finalContextMapping.put(i, new HashSet<>());
+            else isSingleEntityPattern.add(i);
+            for (String entity : entityList) {
+                updateMapCount(wordWisePatterns, entity, i);
+            }
+        }
+        for (List<Integer> values : wordWisePatterns.values()) {
+            Set<Integer> mains = values.stream().filter(s -> !isSingleEntityPattern.contains(s)).collect(Collectors.toSet());
+            Set<Integer> contexts = values.stream().filter(isSingleEntityPattern::contains).collect(Collectors.toSet());
+            if (!mains.isEmpty()) {
+                for (Integer i : mains) {
+                    finalContextMapping.get(i).addAll(contexts);
+                }
+            } else {
+                int maxVal = contexts.stream().max(Comparator.comparingInt(s -> patternOutputs.get(s).length())).orElse(-1);
+                if (maxVal != -1) {
+                    finalContextMapping.put(maxVal, finalContextMapping.getOrDefault(maxVal, new HashSet<>()));
+                    for (Integer i : contexts) {
+                        if (i != maxVal) finalContextMapping.get(maxVal).add(i);
+                    }
+                }
+            }
+        }
+        StringBuilder ans = new StringBuilder();
+        for (Integer i : finalContextMapping.keySet()) {
+            ans.append(patternOutputs.get(i));
+            if (finalContextMapping.get(i).size() != 0) {
+                ans.append("{Context:\n");
+                finalContextMapping.get(i).forEach(s -> ans.append(patternOutputs.get(s)));
+                ans.append("}\n");
+            }
+        }
+        return ans.toString();
+    }
+
     private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
         return (double) maxNerCount(patternList) + metaPattern.split(" ").length/20.0;
     }
@@ -227,5 +271,11 @@ public class Util {
             }
         }
         return true;
+    }
+
+    private static List<String> returnEntitiesFromPattern(String patternOutput) {
+        String entities = patternOutput.split("\t")[2];
+        String[] entityList = String.join(",", entities.substring(1, entities.length() - 1).split(" , ")).split(", ");
+        return Arrays.asList(entityList);
     }
 }

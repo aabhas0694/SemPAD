@@ -3,6 +3,7 @@ package cpww;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import org.apache.xpath.operations.Bool;
 
 import java.io.*;
 import java.util.*;
@@ -28,6 +29,7 @@ public class CPWW {
     private static boolean load_sentenceBreakdownData;
     private static boolean load_metapatternData;
     private static int noOfPushUps;
+    private static boolean includeContext;
 
     private static String[] nerTypes;
     private static List<String> stopWords;
@@ -69,6 +71,7 @@ public class CPWW {
         load_sentenceBreakdownData = Boolean.parseBoolean(prop.getProperty("load_sentenceBreakdownData"));
         load_metapatternData = Boolean.parseBoolean(prop.getProperty("load_metapatternData"));
         noOfPushUps = Integer.parseInt(prop.getProperty("noOfPushUps"));
+        includeContext = Boolean.parseBoolean(prop.getProperty("includeContext"));
 
         sentenceCollector = new ArrayList<>();
 
@@ -474,7 +477,8 @@ public class CPWW {
             }
             String answer = null;
             if (!ans.isEmpty()) {
-                answer = Arrays.stream(String.join("", ans).split("\n")).distinct().map(s -> s + "\n").collect(Collectors.joining(""));
+                ans = Arrays.stream(String.join("", ans).split("\n")).distinct().map(s -> s + "\n").collect(Collectors.toList());
+                answer = includeContext ? createContextString(ans) : String.join("", ans);
             }
             return answer;
         } catch (Exception e) {
@@ -488,7 +492,7 @@ public class CPWW {
         List<String> out = new ArrayList<>();
         List<Integer> matchedEntityPos;
         int multiCount = 0;
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < patternList.size(); i++) {
             if (dict.containsKey(subRoot)) {
                 List<SubSentWords> subSent = dict.get(subRoot);
                 int endIndex = -1, startIndex = subSent.size();
@@ -584,7 +588,7 @@ public class CPWW {
             }
             savePatternClassificationData();
             patternList.add(returnSortedPatternList(multiPattern));
-            patternList.add(returnSortedPatternList(singlePattern));
+            if (includeContext) patternList.add(returnSortedPatternList(singlePattern));
             savePatternMatchingResults(patternList);
         } catch (Exception e) {
             StringWriter errors = new StringWriter();
