@@ -19,7 +19,7 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 
-import static cpww.Util.containsEntity;
+import static cpww.Util.*;
 
 public class SentenceProcessor implements Serializable {
     private String sentence;
@@ -51,29 +51,34 @@ public class SentenceProcessor implements Serializable {
 
     private Map<IndexedWord, TreeSet<IndexedWord>> splitNoun(IndexedWord root, Map<IndexedWord,
             TreeSet<IndexedWord>> subTree, SemanticGraph semanticGraph, String[] nerTypes) {
-        if (subTree.containsKey(root)) {
-            return subTree;
-        }
         int index = root.index();
-        subTree.put(root, new TreeSet<>());
+        boolean rootIsVerb = root.tag().charAt(0) == 'V';
+        subTree.put(root, subTree.getOrDefault(root, new TreeSet<>()));
         Queue<IndexedWord> search = new LinkedList<>();
+        List<IndexedWord> potentialDeletions = null;
         search.offer(root);
         while (!search.isEmpty()) {
             IndexedWord node = search.poll();
-            if (!subTree.get(root).contains(node)) {
-                TreeSet<IndexedWord> temp = subTree.get(root);
-                temp.add(node);
-                subTree.put(root, temp);
-            }
+            if (node.equals(root) && subTree.get(root).contains(node)) continue;
+
+            TreeSet<IndexedWord> temp = subTree.get(root);
+            temp.add(node);
+            subTree.put(root, temp);
             int newIndex = node.index();
             boolean rootCheck = semanticGraph.getRoots().contains(node);
-            List<IndexedWord> children = semanticGraph.getChildList(node);
+            List<IndexedWord> children;
+            if (rootIsVerb && root.equals(node)) {
+                potentialDeletions = verbAlternates(root, semanticGraph, nerTypes, subTree);
+                children = new ArrayList<>(subTree.get(node));
+            } else {
+                children = semanticGraph.getChildList(node);
+            }
             boolean foundFirstModifier = false;
 
             for (IndexedWord child : children) {
-                if ((rootCheck && root.equals(node)) || !isSplitPoint(node, nerTypes)) {
+                if ((rootCheck && root.equals(node)) || (!isSplitPoint(node, nerTypes) && !subTree.containsKey(node))) {
                     search.offer(child);
-                } else if (isSplitPoint(node, nerTypes)) {
+                } else if (isSplitPoint(node, nerTypes) || subTree.containsKey(node)) {
                     boolean modifierCheck = isModifier(semanticGraph.getEdge(node, child));
                     if (!foundFirstModifier && modifierCheck) foundFirstModifier = true;
                     if (root.equals(node)) {
@@ -83,10 +88,11 @@ public class SentenceProcessor implements Serializable {
                     }
                 }
             }
-            if (isSplitPoint(node, nerTypes)) {
+            if (!root.equals(node) && (isSplitPoint(node, nerTypes) || subTree.containsKey(node))) {
                 subTree = splitNoun(node, subTree, semanticGraph, nerTypes);
             }
         }
+        if (potentialDeletions != null) subTree.get(root).removeAll(potentialDeletions);
         return subTree;
     }
 
@@ -109,14 +115,6 @@ public class SentenceProcessor implements Serializable {
             SubSentWords word = new SubSentWords(entry.getKey(), entry.getValue(), containsEntity, entityDict);
             this.reverseEncoding.put(entry.getValue(), word);
         }
-    }
-
-    private boolean isSplitPoint(IndexedWord word, String[] nerTypes) {
-        return word.tag().charAt(0) == 'N' || containsEntity(word.value(), nerTypes);
-    }
-
-    private boolean isModifier(SemanticGraphEdge edge) {
-        return edge.toString().contains("mod") || edge.toString().contains("compound");
     }
 
     public Map<String, SubSentWords> getReverseWordEncoding() {

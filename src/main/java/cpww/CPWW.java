@@ -3,7 +3,6 @@ package cpww;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import org.apache.xpath.operations.Bool;
 
 import java.io.*;
 import java.util.*;
@@ -498,7 +497,7 @@ public class CPWW {
                 int endIndex = -1, startIndex = subSent.size();
                 for (String metaPattern : patternList.get(i).keySet()) {
                     if (i != 0 && (multiCount > 0 || metaPattern.split(" ").length < 3)) break;
-                    List<Integer> nerIndices = check_subsequence(subSent, true, metaPattern, nerTypes);
+                    List<Integer> nerIndices = check_subsequence(subSent, i != 0, metaPattern, nerTypes);
                     if (nerIndices != null) {
                         int newStart = nerIndices.get(0), newEnd = nerIndices.get(nerIndices.size() - 1);
                         boolean check1 = (i != 0) ? (newStart > endIndex) : (newStart >= endIndex);

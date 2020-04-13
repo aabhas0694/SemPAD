@@ -2,11 +2,12 @@ package cpww;
 
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.process.Morphology;
+import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Util {
     public static int sum(List<Integer> abc){
@@ -80,6 +81,43 @@ public class Util {
                 return null;
             }
         }
+    }
+
+    static boolean isSplitPoint(IndexedWord word, String[] nerTypes) {
+        return word.tag().charAt(0) == 'N' || containsEntity(word.value(), nerTypes);
+    }
+
+    static boolean isModifier(SemanticGraphEdge edge) {
+        return edge != null && (edge.toString().contains("mod") || edge.toString().contains("compound"));
+    }
+
+    static List<IndexedWord> verbAlternates(IndexedWord verb, SemanticGraph semanticGraph, String[] nerTypes,
+                                            Map<IndexedWord, TreeSet<IndexedWord>> subTree) {
+        List<IndexedWord> potentialDeletions = new ArrayList<>();
+        IndexedWord foundSubject = null, foundConjugate = null, foundObject = null;
+        for (IndexedWord child : semanticGraph.getChildList(verb)) {
+            if (child.index() < verb.index() && semanticGraph.getEdge(verb, child).toString().contains("subj")) {
+                foundSubject = child;
+            } else if (foundSubject != null && isSplitPoint(child, nerTypes) && child.index() > verb.index()) {
+                foundObject = child;
+            } else if (semanticGraph.getEdge(verb, child).toString().contains("cc") && child.index() > verb.index()) {
+                potentialDeletions.add(child);
+            } else if (semanticGraph.getEdge(verb, child).toString().contains("conj") && child.index() > verb.index()) {
+                foundConjugate = child;
+                potentialDeletions.add(child);
+            }
+            TreeSet<IndexedWord> temp = subTree.get(verb);
+            temp.add(child);
+            subTree.put(verb, temp);
+        }
+        if (foundConjugate != null && foundSubject != null && foundObject != null) {
+           TreeSet<IndexedWord> temp = subTree.getOrDefault(foundConjugate, new TreeSet<>());
+            temp.add(foundSubject);
+            if (foundObject.index() > foundConjugate.index()) temp.add(foundObject);
+            subTree.put(foundConjugate, temp);
+            return potentialDeletions;
+        }
+        return null;
     }
 
     static List<SubSentWords> sort_leafToTop(SentenceProcessor sentence){

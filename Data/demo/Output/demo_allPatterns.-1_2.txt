@@ -1,3 +1,5 @@
+PERSON be bear->6
+die in LOCATION->4
 wife PERSON->4
 ORGANIZATION chief executive PERSON->4
 executive PERSON->4
