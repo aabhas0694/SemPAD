@@ -61,7 +61,8 @@ public class Util {
                 if (checkContinuity) {
                     String root = min_characters(patternTree);
                     for (String t : patternTree) {
-                        if (!patternTree.contains(t.substring(0, t.length() - 1)) && !t.equals(root)) {
+                        String ancestor = t.substring(0, t.length() - 1);
+                        if (!patternTree.contains(ancestor) && !t.equals(root) && !ancestor.equals(root.substring(0, root.length() - 1))) {
                             solutionFound = false;
                             break;
                         }

@@ -497,7 +497,7 @@ public class CPWW {
                 int endIndex = -1, startIndex = subSent.size();
                 for (String metaPattern : patternList.get(i).keySet()) {
                     if (i != 0 && (multiCount > 0 || metaPattern.split(" ").length < 3)) break;
-                    List<Integer> nerIndices = check_subsequence(subSent, i != 0, metaPattern, nerTypes);
+                    List<Integer> nerIndices = check_subsequence(subSent, true, metaPattern, nerTypes);
                     if (nerIndices != null) {
                         int newStart = nerIndices.get(0), newEnd = nerIndices.get(nerIndices.size() - 1);
                         boolean check1 = (i != 0) ? (newStart > endIndex) : (newStart >= endIndex);
