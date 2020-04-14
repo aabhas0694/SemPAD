@@ -60,7 +60,7 @@ public class SentenceProcessor implements Serializable {
         while (!search.isEmpty()) {
             IndexedWord node = search.poll();
             if (node.equals(root) && subTree.get(root).contains(node)) continue;
-
+            boolean nodeIsVerb = node.tag().charAt(0) == 'V';
             TreeSet<IndexedWord> temp = subTree.get(root);
             temp.add(node);
             subTree.put(root, temp);
@@ -79,7 +79,7 @@ public class SentenceProcessor implements Serializable {
                 if ((rootCheck && root.equals(node)) || (!isSplitPoint(node, nerTypes) && !subTree.containsKey(node))) {
                     search.offer(child);
                 } else if (isSplitPoint(node, nerTypes) || subTree.containsKey(node)) {
-                    boolean modifierCheck = isModifier(semanticGraph.getEdge(node, child));
+                    boolean modifierCheck = (nodeIsVerb && subTree.containsKey(node)) || isModifier(semanticGraph.getEdge(node, child));
                     if (!foundFirstModifier && modifierCheck) foundFirstModifier = true;
                     if (root.equals(node)) {
                         if (child.index() >= index || foundFirstModifier) search.offer(child);

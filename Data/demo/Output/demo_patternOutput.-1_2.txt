@@ -1,13 +1,15 @@
-1234567_0	die in LOCATION	[Brooklyn]	Charles J. Hynes was born and died in Brooklyn .
-1234567_0	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes was born and died in Brooklyn .
-1234567_1	die in LOCATION	[Brooklyn]	Charles J. Hynes were born and died in Brooklyn .
-1234567_1	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes were born and died in Brooklyn .
-1234567_1	PERSON be bear	[Jeffrey B. Kindler]	CONJUNCTION FOUND: Jeffrey B. Kindler were born and died in Brooklyn .
+1234567_4	PERSON be bear in LOCATION	[Charles J. Hynes, Silver Lake]	Charles J. Hynes was born in Silver Lake , .
+1234567_4	PERSON be bear in LOCATION	[Jeffrey B. Kindler, Brooklyn]	Jeffrey B. Kindler was born in Brooklyn
+1790500_2	PERSON now live	[Charlie McCarthy]	Charlie McCarthy now lives with wife in a ranch .
+1234567_0	dead in LOCATION	[Brooklyn]	Charles J. Hynes was born and was dead in Brooklyn .
+1234567_0	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes was born and was dead in Brooklyn .
+1234567_1	dead in LOCATION	[Brooklyn]	Charles J. Hynes were born and were dead in Brooklyn .
+1234567_1	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes were born and were dead in Brooklyn .
+1234567_1	PERSON be bear	[Jeffrey B. Kindler]	CONJUNCTION FOUND: Jeffrey B. Kindler were born and were dead in Brooklyn .
 1234567_2	die in LOCATION	[Brooklyn]	Charles J. Hynes was born but did not die in Brooklyn .
 1234567_2	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes was born but did not die in Brooklyn .
-1234567_3	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes was born in Silver Lake .
+1234567_3	PERSON be bear in LOCATION	[Charles J. Hynes, Silver Lake]	Charles J. Hynes was born in Silver Lake .
 1234567_3	die in LOCATION	[Brooklyn]	Charles J. Hynes died in Brooklyn
-1790500_2	PERSON now live	[Charlie McCarthy]	Charlie McCarthy now lives with wife in a ranch .
 1793067_3	PERSON to LOCATION	[Cody Bass, Mississauga]	Returned C Cody Bass to Mississauga to Lethbridge .
 {Context:
 1793067_3	LOCATION of the ohl	[Mississauga]	Mississauga of the OHL
@@ -26,10 +28,7 @@
 }
 1772879_1	PERSON to LOCATION	[Fredrik Modin, Columbus]	TAMPA BAY LIGHTNING -- Fredrik Modin to Columbus .
 1702500_1	PERSON of LOCATION	[Tony Blair, Britain]	Prime Minister Tony Blair of Britain
-1750376_1	PERSON to LOCATION	[Henri Rousseau, Grand Palais]	Henri Rousseau : Jungles has just moved from the Modern in London to the Grand Palais , running through June
 1791903_2	ORGANIZATION chief executive PERSON	[Hewlett-Packard, Mark V. Hurd]	Hewlett-Packard chief executive , Mark V. Hurd ,
-1678161_1	PERSON of LOCATION	[Beck, Arkansas]	Mr. Beck , who narrated most of audiobooks and was raised in Arkansas ,
-1678161_1	PERSON of LOCATION	[Beck, Tennessee]	CONJUNCTION FOUND: Mr. Beck , who narrated most of audiobooks and was raised in Tennessee ,
 1809518_2	ORGANIZATION chief executive PERSON	[Pfizer, Jeffrey B. Kindler]	Pfizer chief executive , Jeffrey B. Kindler ,
 1642483_1	PERSON of LOCATION	[M. Jodi Rell, Connecticut]	Gov. M. Jodi Rell of Connecticut
 1815244_1	PERSON of LOCATION	[Mikheil Saakashvili, Georgia]	President Mikheil Saakashvili of Georgia

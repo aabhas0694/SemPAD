@@ -113,7 +113,7 @@ public class Util {
         }
         if (foundConjugate != null && foundSubject != null && foundObject != null) {
            TreeSet<IndexedWord> temp = subTree.getOrDefault(foundConjugate, new TreeSet<>());
-            temp.add(foundSubject);
+            if (!isClause(foundConjugate, semanticGraph)) temp.add(foundSubject);
             if (foundObject.index() > foundConjugate.index()) temp.add(foundObject);
             subTree.put(foundConjugate, temp);
             return potentialDeletions;
@@ -140,15 +140,6 @@ public class Util {
     static boolean containsEntity(String subRoot, String[] nerTypes) {
         for (String ner : nerTypes) {
             if (subRoot.contains(ner)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    static boolean containsEncoding(List<SubSentWords> list, String encoding) {
-        for (SubSentWords w : list) {
-            if (w.getEncoding().equals(encoding)) {
                 return true;
             }
         }
@@ -316,5 +307,9 @@ public class Util {
         String entities = patternOutput.split("\t")[2];
         String[] entityList = String.join(",", entities.substring(1, entities.length() - 1).split(" , ")).split(", ");
         return Arrays.asList(entityList);
+    }
+
+    private static boolean isClause(IndexedWord parent, SemanticGraph semanticGraph) {
+        return semanticGraph.getChildList(parent).stream().anyMatch(s -> semanticGraph.getEdge(parent, s).toString().contains("subj"));
     }
 }
