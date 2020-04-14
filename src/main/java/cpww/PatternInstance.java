@@ -44,14 +44,22 @@ public class PatternInstance {
         String encode = encoding.split("_")[0].replaceAll("\\[", "\\\\[");
         List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(subRoot);
         List<String> ans = new ArrayList<>();
-        String conjPattern = "^" + encode + "[\\w]_conj";
         String ccPattern = "^" + encode + "[\\w]_cc";
         if (entitySent.parallelStream().anyMatch(sw -> Pattern.matches(ccPattern, sw.getEncoding())
                 && (sw.getLemma().equals("but") || sw.getLemma().equals("between")))) {
             return null;
         }
+        if (subRoot.getEncoding().contains("_conj")) {
+            SubSentWords ancestor = sentence.getReverseWordEncoding().getOrDefault(encode.substring(0, encode.length() - 1), null);
+            if (ancestor != null && ancestor.getLemma().equals(subRoot.getLemma())){
+                ans.add(ancestor.getOriginalWord());
+                encode = ancestor.getTrimmedEncoding();
+                entitySent = sentence.getSentenceBreakdown().get(ancestor);
+            }
+        }
+        String conjPattern = "^" + encode + "[\\w]_conj";
         for (SubSentWords sw : entitySent) {
-            if (Pattern.matches(conjPattern, sw.getEncoding()) && sw.getLemma().equals(subRoot.getLemma()) &&
+            if (!sw.equals(subRoot) && Pattern.matches(conjPattern, sw.getEncoding()) && sw.getLemma().equals(subRoot.getLemma()) &&
             sentence.getSentenceBreakdown().get(sw).size() == 1) {
                 ans.add(sw.getOriginalWord());
             }
