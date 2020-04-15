@@ -3,6 +3,9 @@ package cpww;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static cpww.Util.articles;
+import static cpww.Util.patternRegexFilter;
+
 public class MetaPattern {
     private String metaPattern;
     private String clippedMetaPattern;
@@ -19,7 +22,7 @@ public class MetaPattern {
 
     private void processPattern(String pattern, String[] nerTypes) {
        this.metaPattern = Arrays.stream(pattern.split(" "))
-               .filter(word -> !word.matches("[`$\\d%'\\.,\\*:;\\!\\-\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d%'\\.,\\*:;\\!\\-\\|\"\\\\]*"))
+               .filter(word -> !word.matches(patternRegexFilter))
                .collect(Collectors.joining(" "));
 
         String[] splitPattern = this.metaPattern.split(" ");
@@ -48,7 +51,8 @@ public class MetaPattern {
      */
     private boolean checkConjunction(String pattern) {
         List<String> splitPattern = Arrays.asList(pattern.split(" "));
-        return ((splitPattern.contains("and") || splitPattern.contains("or"))  && !splitPattern.contains("between")) || splitPattern.contains("but");
+        return ((splitPattern.contains("and") || splitPattern.contains("or"))  && !splitPattern.contains("between")) ||
+                splitPattern.contains("but") || splitPattern.contains("nor");
     }
 
     /**
@@ -94,8 +98,8 @@ public class MetaPattern {
                 }
             }
         }
-        if (startIndex >= endIndex || (this.entityContainingWords.size() < getNerCount() &&
-                endIndex - startIndex < getNerCount()) || getNerCount() > 1 && endIndex - startIndex == getNerCount() - 1) {
+        if (startIndex >= endIndex || Arrays.asList(splitPattern).subList(startIndex, endIndex + 1).stream()
+                .noneMatch(s -> !entityContainingWords.contains(s) && !Arrays.asList(articles).contains(s))) {
             this.valid = false;
             this.clippedMetaPattern = null;
             return;

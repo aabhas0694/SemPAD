@@ -10,6 +10,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Util {
+    public static final String[] articles = new String[]{"a", "an", "the"};
+    public static final String patternRegexFilter = "[`$\\d%'\\.,\\*:;\\!\\-\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d%'\\.,\\*:;\\!\\-\\|\"\\\\]*";
+
+
     public static int sum(List<Integer> abc){
         int total = 0;
         for (Integer integer : abc) total += integer;
