@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.TreeSet;
 import java.util.Queue;
+import java.util.Collections;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.IndexedWord;
@@ -19,7 +20,7 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 
-import static cpww.Util.*;
+import static cpww.utils.Util.*;
 
 public class SentenceProcessor implements Serializable {
     private String sentence;
@@ -124,13 +125,23 @@ public class SentenceProcessor implements Serializable {
     private void sentenceBreakdown(Map<IndexedWord, String> encodeTree, Map<IndexedWord, TreeSet<IndexedWord>> subTree) {
         for (IndexedWord key : subTree.keySet()) {
             SubSentWords subRoot = this.reverseEncoding.get(encodeTree.get(key));
-            TreeSet<IndexedWord> values = subTree.get(key);
-            List<SubSentWords> temp = new ArrayList<>();
+            List<IndexedWord> values = sort_topToLeaf(subTree.get(key), encodeTree);
+            TreeSet<SubSentWords> temp = new TreeSet<>();
+            int irregularityCount = 0;
             for (IndexedWord w : values) {
                 SubSentWords tempWord = this.reverseEncoding.get(encodeTree.get(w));
-                temp.add(tempWord);
+                String parentEncode = tempWord.getTrimmedEncoding().substring(0, tempWord.getTrimmedEncoding().length() - 1);
+                if (temp.parallelStream().noneMatch(s -> s.getTrimmedEncoding().equals(parentEncode)) && !w.equals(key)) {
+                    SubSentWords modifyWord = new SubSentWords(tempWord);
+                    modifyWord.setEncoding(subRoot.getTrimmedEncoding() + irregularityCount++ + '_' + tempWord.getEncoding().split("_")[1]);
+                    this.reverseEncoding.put(modifyWord.getEncoding(), modifyWord);
+                    this.sentenceBreakdown.put(modifyWord, new ArrayList<>(Collections.singletonList(modifyWord)));
+                    temp.add(modifyWord);
+                } else {
+                    temp.add(tempWord);
+                }
             }
-            this.sentenceBreakdown.put(subRoot, temp);
+            this.sentenceBreakdown.put(subRoot, new ArrayList<>(temp));
         }
     }
 

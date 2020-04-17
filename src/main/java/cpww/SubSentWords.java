@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static cpww.Util.returnLowercaseLemma;
+import static cpww.utils.Util.returnLowercaseLemma;
 
 public class SubSentWords implements Comparable, Serializable {
     private String word;
@@ -32,17 +32,6 @@ public class SubSentWords implements Comparable, Serializable {
         this.lemma = subSentWords.getLemma();
         this.encoding = subSentWords.getEncoding();
         this.index = subSentWords.getIndex();
-    }
-
-    private String preprocess_rollup(String word) {
-        String tok1 = word.replaceAll("\n","");
-        Pattern pattern = Pattern.compile("[A-Z]+[\\d]+");
-        Matcher matcher = pattern.matcher(tok1);
-        while (matcher.find()) {
-            String match = matcher.group();
-            tok1 = tok1.replace(match, match.replaceAll("([A-Z]+)(\\d)+","$1"));
-        }
-        return tok1;
     }
 
     public String getOriginalWord() {

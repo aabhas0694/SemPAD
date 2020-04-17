@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static cpww.Util.*;
+import static cpww.utils.Util.*;
 
 public class CPWW {
     private static String data_name;
@@ -507,7 +507,8 @@ public class CPWW {
                             startIndex = Math.min(startIndex, newStart);
                             endIndex = Math.max(endIndex, newEnd);
                             matchedEntityPos = new ArrayList<>(nerIndices);
-                            PatternInstance instance = new PatternInstance(sentence, subRoot, metaPattern, matchedEntityPos);
+                            PatternInstance instance = new PatternInstance(sentence, subRoot, metaPattern,
+                                    matchedEntityPos, nerTypes);
                             out.add(instance.toString());
                         }
                     }

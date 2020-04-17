@@ -3,8 +3,8 @@ package cpww;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static cpww.Util.articles;
-import static cpww.Util.patternRegexFilter;
+import static cpww.utils.Util.articles;
+import static cpww.utils.Util.patternRegexFilter;
 
 public class MetaPattern {
     private String metaPattern;

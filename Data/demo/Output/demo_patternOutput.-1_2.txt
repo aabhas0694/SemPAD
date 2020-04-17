@@ -1,34 +1,33 @@
-1234567_4	PERSON be bear in LOCATION	[Charles J. Hynes, Silver Lake]	Charles J. Hynes was born in Silver Lake , .
-1234567_4	PERSON be bear in LOCATION	[Jeffrey B. Kindler, Brooklyn]	Jeffrey B. Kindler was born in Brooklyn
-1790500_2	PERSON now live	[Charlie McCarthy]	Charlie McCarthy now lives with wife in a ranch .
-1234567_0	dead in LOCATION	[Brooklyn]	Charles J. Hynes was born and was dead in Brooklyn .
-1234567_0	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes was born and was dead in Brooklyn .
-1234567_1	dead in LOCATION	[Brooklyn]	Charles J. Hynes were born and were dead in Brooklyn .
-1234567_1	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes were born and were dead in Brooklyn .
-1234567_1	PERSON be bear	[Jeffrey B. Kindler]	CONJUNCTION FOUND: Jeffrey B. Kindler were born and were dead in Brooklyn .
-1234567_2	die in LOCATION	[Brooklyn]	Charles J. Hynes was born but did not die in Brooklyn .
-1234567_2	PERSON be bear	[Charles J. Hynes]	Charles J. Hynes was born but did not die in Brooklyn .
-1234567_3	PERSON be bear in LOCATION	[Charles J. Hynes, Silver Lake]	Charles J. Hynes was born in Silver Lake .
-1234567_3	die in LOCATION	[Brooklyn]	Charles J. Hynes died in Brooklyn
-1793067_3	PERSON to LOCATION	[Cody Bass, Mississauga]	Returned C Cody Bass to Mississauga to Lethbridge .
+1234567_0	PERSON be bear in LOCATION	[Charles J. Hynes, Brooklyn]	Charles J. Hynes was born in Brooklyn .	Charles J. Hynes be bear in Brooklyn .
+1234567_0	PERSON die in LOCATION	[Charles J. Hynes, Brooklyn]	Charles J. Hynes died in Brooklyn	Charles J. Hynes die in Brooklyn
+1234567_1	PERSON be bear in LOCATION	[Charles J. Hynes, Brooklyn]	Charles J. Hynes were born in Brooklyn .	Charles J. Hynes be bear in Brooklyn .
+1234567_1	PERSON be bear in LOCATION	[Jeffrey B. Kindler, BrooklynJeffrey B. Kindler were born in Brooklyn .	Jeffrey B. Kindler be bear in Brooklyn .
+1234567_1	PERSON die in LOCATION	[Charles J. Hynes, Brooklyn]	Charles J. Hynes died in Brooklyn	Charles J. Hynes die in Brooklyn
+1234567_2	PERSON be bear in LOCATION	[Charles J. Hynes, Brooklyn]	Charles J. Hynes was born in Brooklyn .	Charles J. Hynes be bear in Brooklyn .
+1234567_2	PERSON die in LOCATION	[Charles J. Hynes, Brooklyn]	Charles J. Hynes did not die in Brooklyn	Charles J. Hynes do not die in Brooklyn
+1234567_3	PERSON be bear in LOCATION	[Charles J. Hynes, Silver Lake]	Charles J. Hynes was born in Silver Lake .	Charles J. Hynes be bear in Silver Lake .
+1234567_3	PERSON die in LOCATION	[Charles J. Hynes, Brooklyn]	Charles J. Hynes died in Brooklyn	Charles J. Hynes die in Brooklyn
+1234567_4	PERSON be bear in LOCATION	[Charles J. Hynes, Silver Lake]	Charles J. Hynes was born in Silver Lake , .	Charles J. Hynes be bear in Silver Lake , .
+1234567_4	PERSON be bear in LOCATION	[Jeffrey B. Kindler, Brooklyn]	Jeffrey B. Kindler was born in Brooklyn	Jeffrey B. Kindler be bear in Brooklyn
+1790500_2	PERSON now live	[Charlie McCarthy]	Charlie McCarthy now lives with wife in a ranch .	Charlie McCarthy now live with wife in a ranch .
+1793067_3	PERSON to LOCATION	[Cody Bass, Mississauga]	Returned C Cody Bass to Mississauga to Lethbridge .	return c Cody Bass to Mississauga to Lethbridge .
 {Context:
-1793067_3	LOCATION of the ohl	[Mississauga]	Mississauga of the OHL
+1793067_3	LOCATION of the ohl	[Mississauga]	Mississauga of the OHL	Mississauga of the ohl
 }
-1793067_3	PERSON to LOCATION	[Nick Foligno, Sudbury]	LW Nick Foligno to Sudbury
+1793067_3	PERSON to LOCATION	[Nick Foligno, Sudbury]	LW Nick Foligno to Sudbury	lw Nick Foligno to Sudbury
 {Context:
-1793067_3	LOCATION of the ohl	[Sudbury]	Sudbury of the OHL
+1793067_3	LOCATION of the ohl	[Sudbury]	Sudbury of the OHL	Sudbury of the ohl
 }
-1743758_1	museum of ORGANIZATION	[University of Michigan]	Exhibit Museum of {{Natural History , University of Michigan}}
+1743758_1	museum of ORGANIZATION	[University of Michigan]	Exhibit Museum of {{Natural History , University of Michigan}	exhibit museum of {{natural history , University of Michigan}
 {Context:
-1743758_1	natural history ORGANIZATION	[University of Michigan]	Natural History , University of Michigan
+1743758_1	natural history ORGANIZATION	[University of Michigan]	Natural History , University of Michigan	natural history , University of Michigan
 }
-1743758_1	museum of ORGANIZATION	[University of Oklahoma]	Sam Noble Oklahoma Museum of {{Natural History , University of Oklahoma}}
+1743758_1	museum of ORGANIZATION	[University of Oklahoma]	Sam Noble Oklahoma Museum of {{Natural History , University of Oklahoma}	sam noble oklahoma museum of {{natural history , University of Oklahoma}
 {Context:
-1743758_1	natural history ORGANIZATION	[University of Oklahoma]	Natural History , University of Oklahoma
+1743758_1	natural history ORGANIZATION	[University of Oklahoma]	Natural History , University of Oklahoma	natural history , University of Oklahoma
 }
-1772879_1	PERSON to LOCATION	[Fredrik Modin, Columbus]	TAMPA BAY LIGHTNING -- Fredrik Modin to Columbus .
-1702500_1	PERSON of LOCATION	[Tony Blair, Britain]	Prime Minister Tony Blair of Britain
-1791903_2	ORGANIZATION chief executive PERSON	[Hewlett-Packard, Mark V. Hurd]	Hewlett-Packard chief executive , Mark V. Hurd ,
-1809518_2	ORGANIZATION chief executive PERSON	[Pfizer, Jeffrey B. Kindler]	Pfizer chief executive , Jeffrey B. Kindler ,
-1642483_1	PERSON of LOCATION	[M. Jodi Rell, Connecticut]	Gov. M. Jodi Rell of Connecticut
-1815244_1	PERSON of LOCATION	[Mikheil Saakashvili, Georgia]	President Mikheil Saakashvili of Georgia
+1702500_1	PERSON of LOCATION	[Tony Blair, Britain]	Prime Minister Tony Blair of Britain	prime minister Tony Blair of Britain
+1791903_2	ORGANIZATION chief executive PERSON	[Hewlett-Packard, Mark V. Hurd]	Hewlett-Packard chief executive , Mark V. Hurd ,	Hewlett-Packard chief executive , Mark V. Hurd ,
+1809518_2	ORGANIZATION chief executive PERSON	[Pfizer, Jeffrey B. Kindler]	Pfizer chief executive , Jeffrey B. Kindler ,	Pfizer chief executive , Jeffrey B. Kindler ,
+1642483_1	PERSON of LOCATION	[M. Jodi Rell, Connecticut]	Gov. M. Jodi Rell of Connecticut	gov. M. Jodi Rell of Connecticut
+1815244_1	PERSON of LOCATION	[Mikheil Saakashvili, Georgia]	President Mikheil Saakashvili of Georgia	president Mikheil Saakashvili of Georgia

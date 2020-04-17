@@ -1,6 +1,6 @@
-PERSON be bear->8
-bear in LOCATION->6
-dead in LOCATION->4
+bear in LOCATION->20
+PERSON be bear->12
+die in LOCATION->4
 wife PERSON->4
 executive PERSON->4
 PERSON mich.->4
@@ -10,9 +10,9 @@ ORGANIZATION chief executive->4
 chief executive PERSON->4
 mr. PERSON->4
 LOCATION n.y.->4
+PERSON die->3
 LOCATION of the ohl->2
 lw PERSON->2
-die in LOCATION->2
 PERSON now live->2
 president PERSON->2
 museum of ORGANIZATION->2

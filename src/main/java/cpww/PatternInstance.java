@@ -7,16 +7,18 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static cpww.Util.trimEncoding;
+import static cpww.utils.Util.containsEntity;
+import static cpww.utils.Util.trimEncoding;
 
 public class PatternInstance {
     private String sentID;
     private String metaPattern;
     private List<String> entities = new ArrayList<>();
     private List<List<String>> alternateEntities = new ArrayList<>();
-    private String sentenceInstance;
+    private StringBuilder sentenceInstance;
 
-    PatternInstance (SentenceProcessor sentence, SubSentWords subRoot, String metaPattern, List<Integer> entityPos) {
+    PatternInstance (SentenceProcessor sentence, SubSentWords subRoot, String metaPattern, List<Integer> entityPos,
+                     String[] nerTypes) {
         this.metaPattern = metaPattern;
         this.sentID = sentence.getSentID();
         Map<String, SubSentWords> encodingMap = sentence.getReverseWordEncoding();
@@ -35,8 +37,10 @@ public class PatternInstance {
                 this.entities.add(encodingMap.get(entity_code).getOriginalWord());
                 this.alternateEntities.add(conjunctionSearch(entity_code, sentence));
             }
-            this.sentenceInstance = map_original_tokens(sentence, encoding);
         }
+        sentenceInstance = new StringBuilder();
+        sentenceInstance.append(map_original_tokens(sentence, encoding, nerTypes, false)).append("\t");
+        sentenceInstance.append(map_original_tokens(sentence, encoding, nerTypes, true));
     }
 
     private static List<String> conjunctionSearch(String encoding, SentenceProcessor sentence) {
@@ -100,54 +104,70 @@ public class PatternInstance {
         return hierarchical_expansion(sentence, original_subEnc, replace_encode.getEncoding());
     }
 
-    private String map_original_tokens(SentenceProcessor sentence, String encode){
+    private String map_original_tokens(SentenceProcessor sentence, String encode, String[] nerTypes, boolean wantLemma){
         Map<String, SubSentWords> encodingMap = sentence.getReverseWordEncoding();
         String[] enc = encode.split(" ");
         List<String> ans = new ArrayList<>();
         for (String encoding : enc){
-            String temp = "", res = ""; boolean flag = false;
+            StringBuilder temp = new StringBuilder(), res = new StringBuilder(), finalRes = new StringBuilder();
+            boolean flag = false;
             for (int i = 0; i < encoding.length(); i++){
-                if (res.equals("") && encoding.charAt(i) == '{'){
-                    temp += "{";
+                if (res.length() == 0 && encoding.charAt(i) == '{'){
+                    temp.append("{");
                 }
-                else if(!res.equals("") && encoding.charAt(i) == '}' && !flag){
-                    res = temp + encodingMap.get(res).getOriginalWord() + "}";
+                else if(res.length() != 0 && encoding.charAt(i) == '}' && !flag){
+                    SubSentWords word = encodingMap.get(res.toString());
+                    finalRes.append(temp);
+                    if (wantLemma && !containsEntity(word.getLemma(), nerTypes)) {
+                        finalRes.append(word.getLemma()).append("}");
+                    } else {
+                        finalRes.append(word.getOriginalWord()).append("}");
+                    }
                     flag = true;
                 }
-                else if (!res.equals("") && encoding.charAt(i) == '}' && flag) res += "}";
-                else res += encoding.charAt(i);
+                else if (res.length() != 0 && encoding.charAt(i) == '}' && flag) res.append("}");
+                else res.append(encoding.charAt(i));
             }
-            if (!flag) res = temp + encodingMap.get(res).getOriginalWord();
-            ans.add(res);
+            if (!flag) {
+                SubSentWords word = encodingMap.get(res.toString());
+                finalRes.append(temp);
+                if (wantLemma && !containsEntity(word.getLemma(), nerTypes)) {
+                    finalRes.append(word.getLemma());
+                } else {
+                    finalRes.append(word.getOriginalWord());
+                }
+            }
+            ans.add(finalRes.toString());
         }
         return String.join(" ", ans);
     }
 
     public String toString() {
         if (metaPattern == null) return null;
-        String start = sentID + "\t" + metaPattern + "\t[";
-        String output = start;
+        StringBuilder output = new StringBuilder(sentID);
+        output.append("\t").append(metaPattern).append("\t[");
         for (String entity : entities) {
-            output += entity + ", ";
+            output.append(entity).append(", ");
         }
-        output = output.substring(0, output.length() - 2) + "]\t" + sentenceInstance + "\n";
+        output = new StringBuilder(output.substring(0, output.length() - 2));
+        output.append("]\t").append(sentenceInstance).append("\n");
         if (!this.alternateEntities.isEmpty()) {
             for (int i = 0; i < alternateEntities.size(); i++) {
                 if (alternateEntities.get(i) != null) {
                     for (int j = 0; j < alternateEntities.get(i).size(); j++) {
-                        output += start;
-                        List<String> temp = new ArrayList<>();
-                        temp.addAll(entities.subList(0, i));
+                        output.append(sentID).append("\t").append(metaPattern).append("\t[");
+                        List<String> temp = new ArrayList<>(entities.subList(0, i));
                         temp.add(alternateEntities.get(i).get(j));
                         if (i + 1 != entities.size()) {
                             temp.addAll(entities.subList(i + 1, entities.size()));
                         }
-                        output += String.join(", ", temp) + "]\tCONJUNCTION FOUND: " +
-                                sentenceInstance.replace(entities.get(i), alternateEntities.get(i).get(j)) + "\n";
+                        output.append(String.join(", ", temp))
+                                .append(sentenceInstance.toString().replaceAll(entities.get(i), alternateEntities.get(i).get(j)))
+                                .append("\n");
                     }
                 }
             }
         }
-        return output;
+        return output.toString();
     }
 }
