@@ -146,11 +146,7 @@ public class PatternInstance {
         if (metaPattern == null) return null;
         StringBuilder output = new StringBuilder(sentID);
         output.append("\t").append(metaPattern).append("\t[");
-        for (String entity : entities) {
-            output.append(entity).append(", ");
-        }
-        output = new StringBuilder(output.substring(0, output.length() - 2));
-        output.append("]\t").append(sentenceInstance).append("\n");
+        output.append(String.join(", ", entities)).append("]\t").append(sentenceInstance).append("\n");
         if (!this.alternateEntities.isEmpty()) {
             for (int i = 0; i < alternateEntities.size(); i++) {
                 if (alternateEntities.get(i) != null) {
@@ -161,7 +157,7 @@ public class PatternInstance {
                         if (i + 1 != entities.size()) {
                             temp.addAll(entities.subList(i + 1, entities.size()));
                         }
-                        output.append(String.join(", ", temp))
+                        output.append(String.join(", ", temp)).append("]\t")
                                 .append(sentenceInstance.toString().replace(entities.get(i), alternateEntities.get(i).get(j)))
                                 .append("\n");
                     }
