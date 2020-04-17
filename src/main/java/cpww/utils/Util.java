@@ -202,6 +202,7 @@ public class Util {
         checkAndSetParameter (prop, "nerTypes", folderNameConsistency(prop.getProperty("inputFolder")) + "entityTypes.txt");
         checkAndSetParameter(prop, "noOfPushUps", "3");
         checkAndSetParameter(prop, "includeContext", "true");
+        checkAndSetParameter(prop, "batchSize", "100000");
     }
 
     public static List<String> readList(FileReader fr) throws IOException {

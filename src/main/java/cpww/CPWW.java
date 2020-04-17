@@ -29,6 +29,7 @@ public class CPWW {
     private static boolean load_metapatternData;
     private static int noOfPushUps;
     private static boolean includeContext;
+    private static int batchSize;
 
     private static String[] nerTypes;
     private static List<String> stopWords;
@@ -71,6 +72,7 @@ public class CPWW {
         load_metapatternData = Boolean.parseBoolean(prop.getProperty("load_metapatternData"));
         noOfPushUps = Integer.parseInt(prop.getProperty("noOfPushUps"));
         includeContext = Boolean.parseBoolean(prop.getProperty("includeContext"));
+        batchSize = Integer.parseInt(prop.getProperty("batchSize"));
 
         sentenceCollector = new ArrayList<>();
 
@@ -395,11 +397,12 @@ public class CPWW {
         }
         reader.close();
         logger.log(Level.INFO, "Total Number of Sentences: " + sentenceCollector.size());
-        int chunkSize = 250000;
-        for (int i = 0; i < sentenceCollector.size()/chunkSize + 1; i++) {
-            IntStream.range(i * chunkSize, Math.min(sentenceCollector.size(), (i+1) * chunkSize)).parallel()
+
+        int totalSize = sentenceCollector.size();
+        for (int i = 0; i < totalSize/batchSize + 1; i++) {
+            IntStream.range(i * batchSize, Math.min(totalSize, (i+1) * batchSize)).parallel()
                     .forEach(s -> sentenceCollector.get(s).processSentence(pipeline, entityDictionary, nerTypes));
-            logger.log(Level.INFO, "PROCESSED: " + (i + 1) * chunkSize + " number of sentences");
+            logger.log(Level.INFO, "PROCESSED: " + (i + 1) * batchSize + " number of sentences");
         }
         logger.log(Level.INFO, "COMPLETED: Sentences Processing");
     }
@@ -528,16 +531,21 @@ public class CPWW {
         String outputDirectory = outputFolder + data_name;
         String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
         BufferedWriter patternOutput = new BufferedWriter(new FileWriter(outputDirectory + "_patternOutput" + suffix));
-        String[] outputArray = new String[sentenceCollector.size()];
-        IntStream.range(0, sentenceCollector.size()).parallel().forEach(s -> {
-            try {
-                outputArray[s] = patternFinding(sentenceCollector.get(s), patternList);
-            } catch (Exception e) {
-                StringWriter errors = new StringWriter();
-                e.printStackTrace(new PrintWriter(errors));
-                logger.log(Level.WARNING, errors.toString());
-            }
-        });
+        int totalSize = sentenceCollector.size();
+        String[] outputArray = new String[totalSize];
+        for (int i = 0; i < totalSize/batchSize + 1; i++) {
+            IntStream.range(i * batchSize, Math.min(totalSize, (i+1) * batchSize)).parallel()
+                    .forEach(s -> {
+                                try {
+                                    outputArray[s] = patternFinding(sentenceCollector.get(s), patternList);
+                                } catch (Exception e) {
+                                    StringWriter errors = new StringWriter();
+                                    e.printStackTrace(new PrintWriter(errors));
+                                    logger.log(Level.WARNING, errors.toString());
+                                }
+                            });
+            logger.log(Level.INFO, "PROCESSED: " + (i + 1) * batchSize + " number of sentences");
+        }
         Arrays.stream(outputArray).forEachOrdered(s -> {
             try {
                 if (s != null) patternOutput.write(s);
@@ -587,7 +595,12 @@ public class CPWW {
             while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
                 prevPatternCount = allPattern.size();
                 logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
-                sentenceCollector.parallelStream().forEach(CPWW::hierarchicalPushUp);
+                int totalSize = sentenceCollector.size();
+                for (int i = 0; i < totalSize/batchSize + 1; i++) {
+                    IntStream.range(i * batchSize, Math.min(totalSize, (i+1) * batchSize)).parallel()
+                            .forEach(s -> hierarchicalPushUp(sentenceCollector.get(s)));
+                    logger.log(Level.INFO, "PROCESSED: " + (i + 1) * batchSize + " number of sentences");
+                }
                 logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
                 if (!load_metapatternData) frequent_pattern_mining(iterations);
             }

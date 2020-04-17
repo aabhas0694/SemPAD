@@ -162,7 +162,7 @@ public class PatternInstance {
                             temp.addAll(entities.subList(i + 1, entities.size()));
                         }
                         output.append(String.join(", ", temp))
-                                .append(sentenceInstance.toString().replaceAll(entities.get(i), alternateEntities.get(i).get(j)))
+                                .append(sentenceInstance.toString().replace(entities.get(i), alternateEntities.get(i).get(j)))
                                 .append("\n");
                     }
                 }
