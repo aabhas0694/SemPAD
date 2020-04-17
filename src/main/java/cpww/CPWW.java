@@ -402,7 +402,7 @@ public class CPWW {
         for (int i = 0; i < totalSize/batchSize + 1; i++) {
             IntStream.range(i * batchSize, Math.min(totalSize, (i+1) * batchSize)).parallel()
                     .forEach(s -> sentenceCollector.get(s).processSentence(pipeline, entityDictionary, nerTypes));
-            logger.log(Level.INFO, "PROCESSED: " + (i + 1) * batchSize + " number of sentences");
+            logger.log(Level.INFO, "PROCESSED: " + Math.min(totalSize, (i+1) * batchSize) + " number of sentences");
         }
         logger.log(Level.INFO, "COMPLETED: Sentences Processing");
     }
@@ -544,7 +544,7 @@ public class CPWW {
                                     logger.log(Level.WARNING, errors.toString());
                                 }
                             });
-            logger.log(Level.INFO, "PROCESSED: " + (i + 1) * batchSize + " number of sentences");
+            logger.log(Level.INFO, "PROCESSED: " + Math.min(totalSize, (i+1) * batchSize) + " number of sentences");
         }
         Arrays.stream(outputArray).forEachOrdered(s -> {
             try {
@@ -599,7 +599,7 @@ public class CPWW {
                 for (int i = 0; i < totalSize/batchSize + 1; i++) {
                     IntStream.range(i * batchSize, Math.min(totalSize, (i+1) * batchSize)).parallel()
                             .forEach(s -> hierarchicalPushUp(sentenceCollector.get(s)));
-                    logger.log(Level.INFO, "PROCESSED: " + (i + 1) * batchSize + " number of sentences");
+                    logger.log(Level.INFO, "PROCESSED: " + Math.min(totalSize, (i+1) * batchSize) + " number of sentences");
                 }
                 logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
                 if (!load_metapatternData) frequent_pattern_mining(iterations);
