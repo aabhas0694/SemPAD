@@ -395,7 +395,12 @@ public class CPWW {
         }
         reader.close();
         logger.log(Level.INFO, "Total Number of Sentences: " + sentenceCollector.size());
-        sentenceCollector.parallelStream().forEach(s -> s.processSentence(pipeline, entityDictionary, nerTypes));
+        int chunkSize = 250000;
+        for (int i = 0; i < sentenceCollector.size()/chunkSize + 1; i++) {
+            IntStream.range(i * chunkSize, Math.min(sentenceCollector.size(), (i+1) * chunkSize)).parallel()
+                    .forEach(s -> sentenceCollector.get(s).processSentence(pipeline, entityDictionary, nerTypes));
+            logger.log(Level.INFO, "PROCESSED: " + (i + 1) * chunkSize + " number of sentences");
+        }
         logger.log(Level.INFO, "COMPLETED: Sentences Processing");
     }
 
