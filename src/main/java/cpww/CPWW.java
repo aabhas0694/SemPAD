@@ -504,7 +504,7 @@ public class CPWW {
                 List<SubSentWords> subSent = dict.get(subRoot);
                 int endIndex = -1, startIndex = subSent.size();
                 for (String metaPattern : patternList.get(i).keySet()) {
-                    if (i != 0 && (multiCount > 0 || metaPattern.split(" ").length < 3)) break;
+                    if (i != 0 && (multiCount > 0 || (metaPattern.split(" ").length < 3 && !metaPattern.contains("_")))) break;
                     List<Integer> nerIndices = check_subsequence(subSent, true, metaPattern, nerTypes);
                     if (nerIndices != null) {
                         int newStart = nerIndices.get(0), newEnd = nerIndices.get(nerIndices.size() - 1);
