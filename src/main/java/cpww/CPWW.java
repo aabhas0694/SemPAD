@@ -499,26 +499,26 @@ public class CPWW {
         List<String> out = new ArrayList<>();
         List<Integer> matchedEntityPos;
         int multiCount = 0;
+        List<SubSentWords> subSent = dict.get(subRoot);
+        int entityCount = noOfEntities(subSent, nerTypes);
         for (int i = 0; i < patternList.size(); i++) {
-            if (dict.containsKey(subRoot)) {
-                List<SubSentWords> subSent = dict.get(subRoot);
-                int endIndex = -1, startIndex = subSent.size();
-                for (String metaPattern : patternList.get(i).keySet()) {
-                    if (i != 0 && (multiCount > 0 || (metaPattern.split(" ").length < 3 && !metaPattern.contains("_")))) break;
-                    List<Integer> nerIndices = check_subsequence(subSent, true, metaPattern, nerTypes);
-                    if (nerIndices != null) {
-                        int newStart = nerIndices.get(0), newEnd = nerIndices.get(nerIndices.size() - 1);
-                        boolean check1 = (i != 0) ? (newStart > endIndex) : (newStart >= endIndex);
-                        boolean check2 = (i != 0) ? (newEnd < startIndex) : (newEnd <= startIndex);
-                        if (check1 || check2) {
-                            if (i == 0) multiCount++;
-                            startIndex = Math.min(startIndex, newStart);
-                            endIndex = Math.max(endIndex, newEnd);
-                            matchedEntityPos = new ArrayList<>(nerIndices);
-                            PatternInstance instance = new PatternInstance(sentence, subRoot, metaPattern,
-                                    matchedEntityPos, nerTypes);
-                            out.add(instance.toString());
-                        }
+            if (entityCount == 0 || (i == 0 && entityCount < 2)) continue;
+            int endIndex = -1, startIndex = subSent.size();
+            for (String metaPattern : patternList.get(i).keySet()) {
+                if (i != 0 && (multiCount > 0 || metaPattern.replace("_", " ").split(" ").length < 3)) break;
+                List<Integer> nerIndices = check_subsequence(subSent, true, metaPattern, nerTypes);
+                if (nerIndices != null) {
+                    int newStart = nerIndices.get(0), newEnd = nerIndices.get(nerIndices.size() - 1);
+                    boolean check1 = (i != 0) ? (newStart > endIndex) : (newStart >= endIndex);
+                    boolean check2 = (i != 0) ? (newEnd < startIndex) : (newEnd <= startIndex);
+                    if (check1 || check2) {
+                        if (i == 0) multiCount++;
+                        startIndex = Math.min(startIndex, newStart);
+                        endIndex = Math.max(endIndex, newEnd);
+                        matchedEntityPos = new ArrayList<>(nerIndices);
+                        PatternInstance instance = new PatternInstance(sentence, subRoot, metaPattern,
+                                matchedEntityPos, nerTypes);
+                        out.add(instance.toString());
                     }
                 }
             }

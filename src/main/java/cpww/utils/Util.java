@@ -11,6 +11,7 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Util {
     public static final String[] articles = new String[]{"a", "an", "the"};
@@ -238,6 +239,10 @@ public class Util {
         return encoding.split("_")[0];
     }
 
+    public static int noOfEntities(List<SubSentWords> subSent, String[] nerTypes) {
+        return (int) subSent.stream().map(SubSentWords::getLemma).filter(word -> Arrays.stream(nerTypes).anyMatch(word::contains)).count();
+    }
+
     public static String createContextString(List<String> patternOutputs) {
         Set<Integer> isSingleEntityPattern = new HashSet<>();
         Map<Integer, Set<Integer>> finalContextMapping = new HashMap<>();
@@ -280,7 +285,7 @@ public class Util {
     }
 
     private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
-        return (double) maxNerCount(patternList) + metaPattern.split(" ").length/20.0;
+        return (double) maxNerCount(patternList) + metaPattern.replace("_", " ").split(" ").length/20.0;
     }
 
     private static boolean noConjugateCheck(List<SubSentWords> mainSequence, List<Integer> storingIndex) {
