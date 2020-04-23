@@ -125,7 +125,7 @@ public class PatternInstance {
                     }
                     flag = true;
                 }
-                else if (res.length() != 0 && encoding.charAt(i) == '}' && flag) res.append("}");
+                else if (res.length() != 0 && encoding.charAt(i) == '}' && flag) finalRes.append("}");
                 else res.append(encoding.charAt(i));
             }
             if (!flag) {
