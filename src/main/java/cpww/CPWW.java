@@ -95,7 +95,8 @@ public class CPWW {
                 throw new IOException("Required Pattern Files not found.");
             }
         }
-        makingDir(inputFolder + "ProcessedInput/");
+        makingDir(inputFolder + "ProcessedInput");
+        makingDir(inputFolder + "ProcessedInput/" + batchSize);
         String logFileSuffix = "logFile." + noOfLines + "_" + minimumSupport;
         FileHandler logFile = new FileHandler(outputFolder + logFileSuffix + ".txt");
         logFile.setFormatter(new SimpleFormatter());
@@ -445,7 +446,7 @@ public class CPWW {
 
     private static void saveSentenceBreakdown(int batchIterNo, List<SentenceProcessor> sentenceCollector, int tempIter) throws Exception {
         logger.log(Level.INFO, "STARTING: Sentence Breakdown Serialization for batch " + batchIterNo);
-        String directory = inputFolder + "ProcessedInput/";
+        String directory = inputFolder + "ProcessedInput/" + batchSize + "/";
         String prefix = tempIter == -1 ? "sentenceBatch"  + batchIterNo + "." + noOfLines : "t" + batchIterNo + tempIter;
         File file = new File(directory + prefix + ".txt");
         FileOutputStream fileOut = new FileOutputStream(file);
@@ -460,7 +461,7 @@ public class CPWW {
 
     private static List<SentenceProcessor> loadSentenceBreakdown(int batchIterNo, int tempIter) throws Exception {
         logger.log(Level.INFO, "STARTING: Sentence Breakdown Deserialization for batch " + batchIterNo);
-        String directory = inputFolder + "ProcessedInput/";
+        String directory = inputFolder + "ProcessedInput/" + batchSize + "/";
         String prefix = tempIter == -1 ? "sentenceBatch" + batchIterNo + "." + noOfLines : "t" + batchIterNo + tempIter;
         FileInputStream fileIn = new FileInputStream( directory + prefix + ".txt");
         ObjectInputStream in = new ObjectInputStream(fileIn);
