@@ -4,13 +4,17 @@ import cpww.MetaPattern;
 import cpww.SentenceProcessor;
 import cpww.SubSentWords;
 import edu.stanford.nlp.ling.IndexedWord;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.process.Morphology;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 
 import java.io.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Util {
@@ -177,6 +181,30 @@ public class Util {
         List<Integer> temp = map.getOrDefault(token, new ArrayList<>());
         temp.add(value);
         map.put(token, temp);
+    }
+
+    public static void processInParallel(List<SentenceProcessor> sentenceCollector, StanfordCoreNLP pipeline,
+                                         String[] nerTypes, Map<String, String> entityDictionary) {
+        int totalSize = sentenceCollector.size();
+        IntStream.range(0, totalSize).parallel()
+                    .forEach(s -> sentenceCollector.get(s).processSentence(pipeline, entityDictionary, nerTypes));
+    }
+
+    public static void makingDir(String folderName) {
+        File dir = new File(folderName);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+    }
+
+    public static int countSavedBatches(String inputFolder, int noOfLines) {
+        int batchIterNo = 0;
+        boolean breakdownDataExists = true;
+        while (breakdownDataExists) {
+            breakdownDataExists = new File(inputFolder + "ProcessedInput/sentenceBatch" + batchIterNo + "." + noOfLines + ".txt").exists();
+            batchIterNo++;
+        }
+        return batchIterNo;
     }
 
     public static void writePatternsToFile(BufferedWriter bw, Map<String, List<MetaPattern>> patternList) throws IOException {
