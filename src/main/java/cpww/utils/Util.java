@@ -197,11 +197,12 @@ public class Util {
         }
     }
 
-    public static int countSavedBatches(String inputFolder, int noOfLines) {
+    public static int countSavedBatches(String directory, int noOfLines) {
         int batchIterNo = 0;
-        boolean breakdownDataExists = true;
-        while (breakdownDataExists) {
-            breakdownDataExists = new File(inputFolder + "ProcessedInput/sentenceBatch" + batchIterNo + "." + noOfLines + ".txt").exists();
+        boolean breakdownDataExists;
+        while (true) {
+            breakdownDataExists = new File(directory + "sentenceBatch" + batchIterNo + "." + noOfLines + ".txt").exists();
+            if (!breakdownDataExists) break;
             batchIterNo++;
         }
         return batchIterNo;

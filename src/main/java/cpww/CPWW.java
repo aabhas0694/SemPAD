@@ -74,17 +74,16 @@ public class CPWW {
         includeContext = Boolean.parseBoolean(prop.getProperty("includeContext"));
         batchSize = Integer.parseInt(prop.getProperty("batchSize"));
 
-        File dir = new File(inputFolder);
-        if (!dir.exists()) {
-            throw new IOException("Input Folder not found.");
-        }
+        if (!new File(inputFolder).exists()) throw new IOException("Input Folder not found.");
         boolean metadata_exists = new File(inputFolder + "dict.json").exists();
         boolean annotatedDataExists = new File(inputFolder + "annotated.txt").exists();
         if (!metadata_exists || !annotatedDataExists) {
             throw new IOException("Required Input Files not found.");
         }
         if (load_sentenceBreakdownData) {
-            noOfBatches = countSavedBatches(inputFolder, noOfLines);
+            String directory = inputFolder + "ProcessedInput/" + batchSize + "/";
+            if (!new File(directory).exists()) throw new IOException("Sentence breakdown data does not exist for given batch size.");
+            noOfBatches = countSavedBatches(directory, noOfLines);
             if (noOfBatches == 0) throw new IOException("Sentence Breakdown Data does not exist.");
         }
         makingDir(outputFolder);
