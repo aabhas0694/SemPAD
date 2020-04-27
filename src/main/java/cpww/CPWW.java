@@ -138,6 +138,7 @@ public class CPWW {
                     tokenNumber++;
                 }
             }
+            sentenceCollector.clear();
         }
 
         int patternLength = 1;
@@ -455,6 +456,7 @@ public class CPWW {
             file.deleteOnExit();
         }
         out.writeObject(sentenceCollector);
+        out.close();
         fileOut.close();
         logger.log(Level.INFO, "COMPLETED: Sentence Breakdown Serialization for batch " + batchIterNo);
     }
@@ -466,6 +468,7 @@ public class CPWW {
         FileInputStream fileIn = new FileInputStream( directory + prefix + ".txt");
         ObjectInputStream in = new ObjectInputStream(fileIn);
         List<SentenceProcessor> sentenceCollector = (List<SentenceProcessor>) in.readObject();
+        in.close();
         fileIn.close();
         logger.log(Level.INFO, "COMPLETED: Sentence Breakdown Deserialization for batch " + batchIterNo);
         return sentenceCollector;
@@ -588,6 +591,7 @@ public class CPWW {
                     logger.log(Level.SEVERE, errors.toString());
                 }
             });
+            sentenceCollectorBatch.clear();
             logger.log(Level.INFO, "PROCESSED: Batch Iteration Number - " + batchNo);
         }
         patternOutput.close();
@@ -613,15 +617,15 @@ public class CPWW {
                 frequent_pattern_mining(iterations);
             }
 
+            List<SentenceProcessor> sentenceCollectorBatch;
             while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
                 prevPatternCount = allPattern.size();
                 logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
                 for (int batchNo = 0; batchNo < noOfBatches; batchNo++) {
-                    List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, iterations == 1 ? -1 : iterations);
-                    IntStream iStream = IntStream.range(0, sentenceCollectorBatch.size()).parallel();
-                    iStream.forEach(s -> hierarchicalPushUp(sentenceCollectorBatch.get(s)));
-                    iStream.close();
+                    sentenceCollectorBatch = loadSentenceBreakdown(batchNo, iterations == 1 ? -1 : iterations);
+                    sentenceCollectorBatch.parallelStream().forEach(CPWW::hierarchicalPushUp);
                     saveSentenceBreakdown(batchNo, sentenceCollectorBatch, iterations + 1);
+                    sentenceCollectorBatch.clear();
                     logger.log(Level.INFO, "PROCESSED: Batch Iteration Number - " + batchNo);
                 }
                 logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
