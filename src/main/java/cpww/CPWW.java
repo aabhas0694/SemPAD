@@ -569,7 +569,7 @@ public class CPWW {
         String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
         BufferedWriter patternOutput = new BufferedWriter(new FileWriter(outputDirectory + "patternOutput" + suffix));
         for (int batchNo = 0; batchNo < noOfBatches; batchNo++) {
-            List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, noOfPushUps);
+            List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, noOfPushUps + 1);
             String[] outputArray = new String[sentenceCollectorBatch.size()];
             IntStream.range(0, sentenceCollectorBatch.size()).parallel()
                     .forEach(s -> {
