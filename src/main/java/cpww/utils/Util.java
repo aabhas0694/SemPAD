@@ -11,15 +11,12 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 
 import java.io.*;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class Util {
     public static final String[] articles = new String[]{"a", "an", "the"};
-    public static final String patternRegexFilter = "[`$\\d%'\\.,\\*:;\\!\\-\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d%'\\.,\\*:;\\!\\-\\|\"\\\\]*";
+    public static final String patternRegexFilter = "[`$\\d%'\\.,\\*/\\(\\):;\\!\\-\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d%'\\.,\\*/\\(\\):;\\!\\-\\|\"\\\\]*";
 
 
     public static int sum(List<Integer> abc){
