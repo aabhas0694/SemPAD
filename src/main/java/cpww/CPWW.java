@@ -2,10 +2,12 @@ package cpww;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cpww.utils.PatternMatchIndices;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,6 +32,7 @@ public class CPWW {
     private static int noOfPushUps;
     private static boolean includeContext;
     private static int batchSize;
+    private static int threadCount;
 
     private static String[] nerTypes;
     private static List<String> stopWords;
@@ -41,6 +44,7 @@ public class CPWW {
     private static Map<String, List<MetaPattern>> multiPattern = new HashMap<>();
     private static Map<Integer, List<String>> allPattern_Index = new HashMap<>();
     private static Map<String, Set<Integer>> allPattern_reverseIndex = new HashMap<>();
+    private static ForkJoinPool forkJoinPool = null;
 
     private static Logger logger = Logger.getLogger(CPWW.class.getName()) ;
 
@@ -48,7 +52,7 @@ public class CPWW {
     public CPWW()  {
     }
 
-    private static void initialization() throws IOException {
+    private static void initialization() throws Exception {
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma,parse,depparse");
         pipeline = new StanfordCoreNLP(props);
@@ -73,6 +77,7 @@ public class CPWW {
         noOfPushUps = Integer.parseInt(prop.getProperty("noOfPushUps"));
         includeContext = Boolean.parseBoolean(prop.getProperty("includeContext"));
         batchSize = Integer.parseInt(prop.getProperty("batchSize"));
+        threadCount = Integer.parseInt(prop.getProperty("threadCount"));
 
         if (!new File(inputFolder).exists()) throw new IOException("Input Folder not found.");
         boolean metadata_exists = new File(inputFolder + "dict.json").exists();
@@ -100,6 +105,11 @@ public class CPWW {
         FileHandler logFile = new FileHandler(outputFolder + logFileSuffix + ".txt");
         logFile.setFormatter(new SimpleFormatter());
         logger.addHandler(logFile);
+        try {
+            forkJoinPool = new ForkJoinPool(threadCount);
+        } catch (Exception e) {
+            throw new Exception(e);
+        }
     }
 
     private static void frequent_pattern_mining(int iteration) throws Exception {
@@ -190,7 +200,7 @@ public class CPWW {
         pattern_classification();
     }
 
-    private static void pattern_classification() throws IOException {
+    private static void pattern_classification() {
         clearPatterns();
         int allPatternCount = 0;
 
@@ -430,7 +440,8 @@ public class CPWW {
 
     private static void processParallelHelper(List<SentenceProcessor> sentenceCollector, int batchIterNo) throws Exception {
         IntStream istream = IntStream.range(0, sentenceCollector.size());
-        istream.parallel().forEach(s -> sentenceCollector.get(s).processSentence(pipeline, entityDictionary, nerTypes));
+        forkJoinPool.submit(() -> istream.parallel().forEach(s -> sentenceCollector.get(s).processSentence(pipeline, entityDictionary, nerTypes))
+        ).get();
         istream.close();
         logger.log(Level.INFO, "PROCESSED: Batch Iteration Number - " + batchIterNo);
         saveSentenceBreakdown(batchIterNo, sentenceCollector, -1);
@@ -504,8 +515,8 @@ public class CPWW {
 
     private static String patternFinding(SentenceProcessor sentence, List<Map<String, Integer>> patternList) throws Exception {
         try {
-            List<String> ans = new ArrayList<>();
-            String output;
+            List<PatternInstance> ans = new ArrayList<>();
+            List<PatternInstance> output;
             Map<SubSentWords, List<SubSentWords>> map;
             for (SubSentWords subRoot : sentence.getSentenceBreakdown().keySet()) {
                 int iter = 1;
@@ -515,14 +526,27 @@ public class CPWW {
                 while (iter > 0) {
                     map = (iter == 2) ? sentence.getPushedUpSentences() : sentence.getSentenceBreakdown();
                     output = patternMatchingHelper(sentence, map, subRoot, patternList);
-                    if (output != null) ans.add(output);
+                    if (output != null) ans.addAll(output);
                     iter--;
                 }
             }
             String answer = null;
             if (!ans.isEmpty()) {
-                ans = Arrays.stream(String.join("", ans).split("\n")).distinct().map(s -> s + "\n").collect(Collectors.toList());
-                answer = includeContext ? createContextString(ans) : String.join("", ans);
+                ans = ans.stream().sorted(Comparator.comparing(e -> e.getAllElementIndices().size())).distinct().collect(Collectors.toList());
+                List<PatternInstance> finalAns = new ArrayList<>();
+                boolean redundant;
+                for (int i = 0; i < ans.size() - 1; i++) {
+                    redundant = false;
+                    for (int j = i + 1; j < ans.size(); j++) {
+                        if (ans.get(j).getAllElementIndices().containsAll(ans.get(i).getAllElementIndices())) {
+                            redundant = true;
+                            break;
+                        }
+                    }
+                    if (!redundant) finalAns.add(ans.get(i));
+                }
+                finalAns.add(ans.get(ans.size() - 1));
+                answer = includeContext ? createExtractionString(finalAns) : finalAns.stream().map(PatternInstance::toString).collect(Collectors.joining(""));
             }
             return answer;
         } catch (Exception e) {
@@ -531,10 +555,9 @@ public class CPWW {
         }
     }
 
-    private static String patternMatchingHelper(SentenceProcessor sentence, Map<SubSentWords, List<SubSentWords>> dict,
+    private static List<PatternInstance> patternMatchingHelper(SentenceProcessor sentence, Map<SubSentWords, List<SubSentWords>> dict,
                                                 SubSentWords subRoot, List<Map<String, Integer>> patternList) {
-        List<String> out = new ArrayList<>();
-        List<Integer> matchedEntityPos;
+        List<PatternInstance> out = new ArrayList<>();
         int multiCount = 0;
         List<SubSentWords> subSent = dict.get(subRoot);
         int entityCount = noOfEntities(subSent, nerTypes);
@@ -543,24 +566,26 @@ public class CPWW {
             int endIndex = -1, startIndex = subSent.size();
             for (String metaPattern : patternList.get(i).keySet()) {
                 if (i != 0 && (multiCount > 0 || metaPattern.replace("_", " ").split(" ").length < 3)) break;
-                List<Integer> nerIndices = check_subsequence(subSent, true, metaPattern, nerTypes);
-                if (nerIndices != null) {
-                    int newStart = nerIndices.get(0), newEnd = nerIndices.get(nerIndices.size() - 1);
+                PatternMatchIndices matchFound = check_subsequence(subSent, true, metaPattern, nerTypes);
+                if (matchFound != null) {
+                    int newStart = matchFound.getEntityIndices().get(0), newEnd = matchFound.getEntityIndices().get(matchFound.getEntityIndices().size() - 1);
                     boolean check1 = (i != 0) ? (newStart > endIndex) : (newStart >= endIndex);
                     boolean check2 = (i != 0) ? (newEnd < startIndex) : (newEnd <= startIndex);
                     if (check1 || check2) {
                         if (i == 0) multiCount++;
                         startIndex = Math.min(startIndex, newStart);
                         endIndex = Math.max(endIndex, newEnd);
-                        matchedEntityPos = new ArrayList<>(nerIndices);
                         PatternInstance instance = new PatternInstance(sentence, subRoot, metaPattern,
-                                matchedEntityPos, nerTypes);
-                        out.add(instance.toString());
+                                matchFound, nerTypes);
+                        out.add(instance);
+                        for (PatternInstance altInstance: instance.generateAlternatePattern()) {
+                            out.add(altInstance);
+                        }
                     }
                 }
             }
         }
-        return out.isEmpty() ? null : String.join("", out);
+        return out.isEmpty() ? null : out;
     }
 
     private static void savePatternMatchingResults(List<Map<String, Integer>> patternList) throws Exception{
@@ -571,16 +596,17 @@ public class CPWW {
         for (int batchNo = 0; batchNo < noOfBatches; batchNo++) {
             List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, noOfPushUps + 1);
             String[] outputArray = new String[sentenceCollectorBatch.size()];
-            IntStream.range(0, sentenceCollectorBatch.size()).parallel()
+            forkJoinPool.submit(() -> IntStream.range(0, sentenceCollectorBatch.size()).parallel()
                     .forEach(s -> {
-                                try {
-                                    outputArray[s] = patternFinding(sentenceCollectorBatch.get(s), patternList);
-                                } catch (Exception e) {
-                                    StringWriter errors = new StringWriter();
-                                    e.printStackTrace(new PrintWriter(errors));
-                                    logger.log(Level.WARNING, errors.toString());
-                                }
-                            });
+                        try {
+                            outputArray[s] = patternFinding(sentenceCollectorBatch.get(s), patternList);
+                        } catch (Exception e) {
+                            StringWriter errors = new StringWriter();
+                            e.printStackTrace(new PrintWriter(errors));
+                            logger.log(Level.WARNING, errors.toString());
+                        }
+                    })
+            ).get();
             Arrays.stream(outputArray).forEachOrdered(s -> {
                 try {
                     if (s != null) patternOutput.write(s);
@@ -598,6 +624,7 @@ public class CPWW {
     }
 
     public static void call() {
+        ForkJoinPool fJP = null;
         try {
             initialization();
             if (!load_sentenceBreakdownData) {
@@ -616,13 +643,12 @@ public class CPWW {
                 frequent_pattern_mining(iterations);
             }
 
-            List<SentenceProcessor> sentenceCollectorBatch;
             while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
                 prevPatternCount = allPattern.size();
                 logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
                 for (int batchNo = 0; batchNo < noOfBatches; batchNo++) {
-                    sentenceCollectorBatch = loadSentenceBreakdown(batchNo, iterations == 1 ? -1 : iterations);
-                    sentenceCollectorBatch.parallelStream().forEach(CPWW::hierarchicalPushUp);
+                    List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, iterations == 1 ? -1 : iterations);
+                    forkJoinPool.submit(() -> sentenceCollectorBatch.parallelStream().forEach(CPWW::hierarchicalPushUp)).get();
                     saveSentenceBreakdown(batchNo, sentenceCollectorBatch, iterations + 1);
                     sentenceCollectorBatch.clear();
                     logger.log(Level.INFO, "PROCESSED: Batch Iteration Number - " + batchNo);
@@ -638,6 +664,10 @@ public class CPWW {
             StringWriter errors = new StringWriter();
             e.printStackTrace(new PrintWriter(errors));
             logger.log(Level.SEVERE, errors.toString());
+        } finally {
+            if (forkJoinPool != null) {
+                forkJoinPool.shutdown();
+            }
         }
     }
 }

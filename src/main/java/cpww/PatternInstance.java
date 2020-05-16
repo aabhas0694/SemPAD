@@ -1,11 +1,11 @@
 package cpww;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import cpww.utils.PatternMatchIndices;
+
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static cpww.utils.Util.containsEntity;
 import static cpww.utils.Util.trimEncoding;
@@ -13,28 +13,35 @@ import static cpww.utils.Util.trimEncoding;
 public class PatternInstance {
     private String sentID;
     private String metaPattern;
-    private List<String> entities = new ArrayList<>();
-    private List<List<String>> alternateEntities = new ArrayList<>();
+    private List<SubSentWords> entities = new ArrayList<>();
+    private List<Integer> allElementIndices = new ArrayList<>();
+    private List<List<SubSentWords>> alternateEntities = new ArrayList<>();
     private StringBuilder sentenceInstance;
 
-    PatternInstance (SentenceProcessor sentence, SubSentWords subRoot, String metaPattern, List<Integer> entityPos,
+    PatternInstance (String sentID, String metaPattern) {
+        this.sentID = sentID;
+        this.metaPattern = metaPattern;
+    }
+
+    PatternInstance (SentenceProcessor sentence, SubSentWords subRoot, String metaPattern, PatternMatchIndices entityPos,
                      String[] nerTypes) {
         this.metaPattern = metaPattern;
         this.sentID = sentence.getSentID();
+        this.allElementIndices = entityPos.getElementIndices();
         Map<String, SubSentWords> encodingMap = sentence.getReverseWordEncoding();
         List<SubSentWords> value = sentence.getSentenceBreakdown().get(subRoot);
         List<String> subEnc = value.stream().map(SubSentWords::getEncoding).collect(Collectors.toList());
         String encoding = String.join(" ", subEnc);
-        for (Integer entityPo : entityPos) {
+        for (Integer entityPo : entityPos.getEntityIndices()) {
             String entity_code = subEnc.get(entityPo);
             if (sentence.getReplaceSurfaceName().containsKey(trimEncoding(entity_code)) &&
                     !trimEncoding(entity_code).equals(subRoot.getTrimmedEncoding())) {
                 List<String> output = hierarchical_expansion(sentence, encoding, entity_code);
-                this.entities.add(encodingMap.get(output.get(0)).getOriginalWord());
+                this.entities.add(encodingMap.get(output.get(0)));
                 this.alternateEntities.add(conjunctionSearch(output.get(0), sentence));
                 encoding = output.get(1);
             } else {
-                this.entities.add(encodingMap.get(entity_code).getOriginalWord());
+                this.entities.add(encodingMap.get(entity_code));
                 this.alternateEntities.add(conjunctionSearch(entity_code, sentence));
             }
         }
@@ -43,11 +50,11 @@ public class PatternInstance {
         sentenceInstance.append(map_original_tokens(sentence, encoding, nerTypes, true));
     }
 
-    private static List<String> conjunctionSearch(String encoding, SentenceProcessor sentence) {
+    private static List<SubSentWords> conjunctionSearch(String encoding, SentenceProcessor sentence) {
         SubSentWords subRoot = sentence.getReverseWordEncoding().get(encoding);
         String encode = encoding.split("_")[0].replaceAll("\\[", "\\\\[");
         List<SubSentWords> entitySent = sentence.getSentenceBreakdown().get(subRoot);
-        List<String> ans = new ArrayList<>();
+        List<SubSentWords> ans = new ArrayList<>();
         String ccPattern = "^" + encode + "[\\w]_cc";
         if (entitySent.parallelStream().anyMatch(sw -> Pattern.matches(ccPattern, sw.getEncoding())
                 && (sw.getLemma().equals("but") || sw.getLemma().equals("between")))) {
@@ -56,7 +63,7 @@ public class PatternInstance {
         if (subRoot.getEncoding().contains("_conj")) {
             SubSentWords ancestor = sentence.getReverseWordEncoding().getOrDefault(encode.substring(0, encode.length() - 1), null);
             if (ancestor != null && ancestor.getLemma().equals(subRoot.getLemma())){
-                ans.add(ancestor.getOriginalWord());
+                ans.add(ancestor);
                 encode = ancestor.getTrimmedEncoding();
                 entitySent = sentence.getSentenceBreakdown().get(ancestor);
             }
@@ -65,7 +72,7 @@ public class PatternInstance {
         for (SubSentWords sw : entitySent) {
             if (!sw.equals(subRoot) && Pattern.matches(conjPattern, sw.getEncoding()) && sw.getLemma().equals(subRoot.getLemma()) &&
             sentence.getSentenceBreakdown().get(sw).size() == 1) {
-                ans.add(sw.getOriginalWord());
+                ans.add(sw);
             }
         }
         return ans.isEmpty() ? null : ans;
@@ -142,28 +149,60 @@ public class PatternInstance {
         return String.join(" ", ans);
     }
 
-    public String toString() {
-        if (metaPattern == null) return null;
-        StringBuilder output = new StringBuilder(sentID);
-        output.append("\t").append(metaPattern).append("\t[");
-        output.append(String.join(", ", entities)).append("]\t").append(sentenceInstance).append("\n");
+    public List<PatternInstance> generateAlternatePattern() {
+        List<PatternInstance> altPatternInstances = new ArrayList<>();
         if (!this.alternateEntities.isEmpty()) {
+            PatternInstance altPatternInstance = new PatternInstance(sentID, metaPattern);
             for (int i = 0; i < alternateEntities.size(); i++) {
                 if (alternateEntities.get(i) != null) {
                     for (int j = 0; j < alternateEntities.get(i).size(); j++) {
-                        output.append(sentID).append("\t").append(metaPattern).append("\t[");
-                        List<String> temp = new ArrayList<>(entities.subList(0, i));
+                        Set<Integer> copyIndices = new HashSet<>(allElementIndices);
+                        copyIndices.remove(entities.get(i).getIndex());
+                        copyIndices.add(alternateEntities.get(i).get(j).getIndex());
+                        List<SubSentWords> temp = entities.subList(0, i);
                         temp.add(alternateEntities.get(i).get(j));
                         if (i + 1 != entities.size()) {
                             temp.addAll(entities.subList(i + 1, entities.size()));
                         }
-                        output.append(String.join(", ", temp)).append("]\t")
-                                .append(sentenceInstance.toString().replace(entities.get(i), alternateEntities.get(i).get(j)))
-                                .append("\n");
+                        altPatternInstance.entities = temp;
+                        altPatternInstance.allElementIndices = copyIndices.stream().sorted().collect(Collectors.toList());
+                        altPatternInstance.sentenceInstance = new StringBuilder(sentenceInstance.toString().replace(entities.get(i).getOriginalWord(), alternateEntities.get(i).get(j).getOriginalWord()));
+                        altPatternInstances.add(altPatternInstance);
                     }
                 }
             }
         }
+        return altPatternInstances;
+    }
+
+    public String toString() {
+        if (metaPattern == null) return null;
+        StringBuilder output = new StringBuilder(sentID);
+        output.append("\t").append(metaPattern).append("\t[")
+                .append(entities.stream().map(SubSentWords::getOriginalWord).collect(Collectors.joining(", ")))
+                .append("]\t").append(sentenceInstance).append("\n");
         return output.toString();
+    }
+
+    public List<Integer> getAllElementIndices() {
+        return allElementIndices;
+    }
+
+    public List<SubSentWords> getEntities() {
+        return entities;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PatternInstance that = (PatternInstance) o;
+        if (this.allElementIndices.size() != that.allElementIndices.size()) return false;
+        IntStream iStream = IntStream.range(0, allElementIndices.size()).parallel();
+        boolean notSame = iStream.anyMatch(i -> !allElementIndices.get(i).equals(that.allElementIndices.get(i)));
+        iStream.close();
+        return sentID.equals(that.sentID) &&
+                metaPattern.equals(that.metaPattern) &&
+                !notSame;
     }
 }

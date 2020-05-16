@@ -1,10 +1,10 @@
 package cpww.utils;
 
 import cpww.MetaPattern;
+import cpww.PatternInstance;
 import cpww.SentenceProcessor;
 import cpww.SubSentWords;
 import edu.stanford.nlp.ling.IndexedWord;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.process.Morphology;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
@@ -12,7 +12,6 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Util {
     public static final String[] articles = new String[]{"a", "an", "the"};
@@ -44,11 +43,12 @@ public class Util {
         return l;
     }
 
-    public static List<Integer> check_subsequence(List<SubSentWords> main_sequence, boolean checkContinuity,
+    public static PatternMatchIndices check_subsequence(List<SubSentWords> main_sequence, boolean checkContinuity,
                                            String mainPattern, String[] nerTypes){
         String[] pattern = mainPattern.split(" ");
         int m = main_sequence.size(), n = pattern.length;
-        List<Integer> ans = new ArrayList<>();
+        List<Integer> entityIndices = new ArrayList<>();
+        List<Integer> actualSentLevelElementIndices = new ArrayList<>();
         List<Integer> storingIndex = new ArrayList<>();
         List<String> patternTree = new ArrayList<>();
         boolean solutionFound;
@@ -59,9 +59,10 @@ public class Util {
             for (int j = startingIndex ; j < m && i < n; j++) {
                 if (main_sequence.get(j).getLemma().equals(pattern[i])) {
                     storingIndex.add(j);
+                    actualSentLevelElementIndices.add(main_sequence.get(j).getIndex());
                     patternTree.add(main_sequence.get(j).getTrimmedEncoding());
                     if (containsEntity(main_sequence.get(j).getLemma(), nerTypes)) {
-                        ans.add(j);
+                        entityIndices.add(j);
                     }
                     i++;
                 }
@@ -77,15 +78,16 @@ public class Util {
                         }
                     }
                     if (solutionFound && noConjugateCheck(main_sequence, storingIndex)) {
-                        return ans;
+                        return new PatternMatchIndices(actualSentLevelElementIndices, entityIndices);
                     } else {
                         startingIndex = storingIndex.get(0) + 1;
                         storingIndex.clear();
                         patternTree.clear();
-                        ans.clear();
+                        entityIndices.clear();
+                        actualSentLevelElementIndices.clear();
                     }
                 } else {
-                    return ans;
+                    return new PatternMatchIndices(actualSentLevelElementIndices, entityIndices);
                 }
             } else {
                 return null;
@@ -180,13 +182,6 @@ public class Util {
         map.put(token, temp);
     }
 
-    public static void processInParallel(List<SentenceProcessor> sentenceCollector, StanfordCoreNLP pipeline,
-                                         String[] nerTypes, Map<String, String> entityDictionary) {
-        int totalSize = sentenceCollector.size();
-        IntStream.range(0, totalSize).parallel()
-                    .forEach(s -> sentenceCollector.get(s).processSentence(pipeline, entityDictionary, nerTypes));
-    }
-
     public static void makingDir(String folderName) {
         File dir = new File(folderName);
         if (!dir.exists()) {
@@ -229,7 +224,8 @@ public class Util {
         checkAndSetParameter (prop, "nerTypes", folderNameConsistency(prop.getProperty("inputFolder")) + "entityTypes.txt");
         checkAndSetParameter(prop, "noOfPushUps", "3");
         checkAndSetParameter(prop, "includeContext", "true");
-        checkAndSetParameter(prop, "batchSize", "100000");
+        checkAndSetParameter(prop, "batchSize", "200000");
+        checkAndSetParameter(prop, "threadCount", "16");
     }
 
     public static List<String> readList(FileReader fr) throws IOException {
@@ -269,17 +265,21 @@ public class Util {
         return (int) subSent.stream().map(SubSentWords::getLemma).filter(word -> Arrays.stream(nerTypes).anyMatch(word::contains)).count();
     }
 
-    public static String createContextString(List<String> patternOutputs) {
+    public static String createExtractionString(List<PatternInstance> patternOutputs) {
         Set<Integer> isSingleEntityPattern = new HashSet<>();
         Map<Integer, Set<Integer>> finalContextMapping = new HashMap<>();
-        Map<String, List<Integer>> wordWisePatterns = new HashMap<>();
+        Map<SubSentWords, List<Integer>> wordWisePatterns = new HashMap<>();
 
         for (int i = 0; i < patternOutputs.size(); i++) {
-            List<String> entityList = returnEntitiesFromPattern(patternOutputs.get(i));
+            List<SubSentWords> entityList = patternOutputs.get(i).getEntities();
             if (entityList.size() > 1) finalContextMapping.put(i, new HashSet<>());
             else isSingleEntityPattern.add(i);
             int finalI = i;
-            entityList.forEach(entity -> updateMapCount(wordWisePatterns, entity, finalI));
+            entityList.forEach(entity -> {
+                List<Integer> temp = wordWisePatterns.getOrDefault(entity, new ArrayList<>());
+                temp.add(finalI);
+                wordWisePatterns.put(entity, temp);
+            });
         }
         for (List<Integer> values : wordWisePatterns.values()) {
             Set<Integer> mains = values.stream().filter(s -> !isSingleEntityPattern.contains(s)).collect(Collectors.toSet());
@@ -289,7 +289,7 @@ public class Util {
                     finalContextMapping.get(i).addAll(contexts);
                 }
             } else {
-                int maxVal = contexts.stream().max(Comparator.comparingInt(s -> patternOutputs.get(s).length())).orElse(-1);
+                int maxVal = contexts.stream().max(Comparator.comparingInt(s -> patternOutputs.get(s).getAllElementIndices().size())).orElse(-1);
                 if (maxVal != -1) {
                     finalContextMapping.put(maxVal, finalContextMapping.getOrDefault(maxVal, new HashSet<>()));
                     for (Integer i : contexts) {
@@ -300,10 +300,10 @@ public class Util {
         }
         StringBuilder ans = new StringBuilder();
         for (Integer i : finalContextMapping.keySet()) {
-            ans.append(patternOutputs.get(i));
+            ans.append(patternOutputs.get(i).toString());
             if (finalContextMapping.get(i).size() != 0) {
                 ans.append("{Context:\n");
-                finalContextMapping.get(i).forEach(s -> ans.append(patternOutputs.get(s)));
+                finalContextMapping.get(i).forEach(s -> ans.append(patternOutputs.get(s).toString()));
                 ans.append("}\n");
             }
         }
