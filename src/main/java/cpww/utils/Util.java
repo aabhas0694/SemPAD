@@ -225,7 +225,7 @@ public class Util {
         checkAndSetParameter(prop, "noOfPushUps", "3");
         checkAndSetParameter(prop, "includeContext", "true");
         checkAndSetParameter(prop, "batchSize", "200000");
-        checkAndSetParameter(prop, "threadCount", "16");
+        checkAndSetParameter(prop, "threadCount", String.valueOf(Runtime.getRuntime().availableProcessors()));
     }
 
     public static List<String> readList(FileReader fr) throws IOException {
