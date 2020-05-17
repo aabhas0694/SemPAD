@@ -159,7 +159,7 @@ public class PatternInstance {
                         Set<Integer> copyIndices = new HashSet<>(allElementIndices);
                         copyIndices.remove(entities.get(i).getIndex());
                         copyIndices.add(alternateEntities.get(i).get(j).getIndex());
-                        List<SubSentWords> temp = entities.subList(0, i);
+                        List<SubSentWords> temp = new ArrayList<>(entities.subList(0, i));
                         temp.add(alternateEntities.get(i).get(j));
                         if (i + 1 != entities.size()) {
                             temp.addAll(entities.subList(i + 1, entities.size()));
