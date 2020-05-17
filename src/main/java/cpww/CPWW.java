@@ -32,7 +32,6 @@ public class CPWW {
     private static int noOfPushUps;
     private static boolean includeContext;
     private static int batchSize;
-    private static int threadCount;
 
     private static String[] nerTypes;
     private static List<String> stopWords;
@@ -77,7 +76,7 @@ public class CPWW {
         noOfPushUps = Integer.parseInt(prop.getProperty("noOfPushUps"));
         includeContext = Boolean.parseBoolean(prop.getProperty("includeContext"));
         batchSize = Integer.parseInt(prop.getProperty("batchSize"));
-        threadCount = Integer.parseInt(prop.getProperty("threadCount"));
+        int threadCount = Integer.parseInt(prop.getProperty("threadCount"));
 
         if (!new File(inputFolder).exists()) throw new IOException("Input Folder not found.");
         boolean metadata_exists = new File(inputFolder + "dict.json").exists();
@@ -578,9 +577,7 @@ public class CPWW {
                         PatternInstance instance = new PatternInstance(sentence, subRoot, metaPattern,
                                 matchFound, nerTypes);
                         out.add(instance);
-                        for (PatternInstance altInstance: instance.generateAlternatePattern()) {
-                            out.add(altInstance);
-                        }
+                        out.addAll(instance.generateAlternatePattern());
                     }
                 }
             }
@@ -624,7 +621,6 @@ public class CPWW {
     }
 
     public static void call() {
-        ForkJoinPool fJP = null;
         try {
             initialization();
             if (!load_sentenceBreakdownData) {

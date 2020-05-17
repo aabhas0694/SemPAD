@@ -152,10 +152,10 @@ public class PatternInstance {
     public List<PatternInstance> generateAlternatePattern() {
         List<PatternInstance> altPatternInstances = new ArrayList<>();
         if (!this.alternateEntities.isEmpty()) {
-            PatternInstance altPatternInstance = new PatternInstance(sentID, metaPattern);
             for (int i = 0; i < alternateEntities.size(); i++) {
                 if (alternateEntities.get(i) != null) {
                     for (int j = 0; j < alternateEntities.get(i).size(); j++) {
+                        PatternInstance altPatternInstance = new PatternInstance(sentID, metaPattern);
                         Set<Integer> copyIndices = new HashSet<>(allElementIndices);
                         copyIndices.remove(entities.get(i).getIndex());
                         copyIndices.add(alternateEntities.get(i).get(j).getIndex());
