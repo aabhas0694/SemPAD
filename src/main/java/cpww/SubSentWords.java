@@ -4,8 +4,8 @@ import edu.stanford.nlp.ling.IndexedWord;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import static cpww.utils.Util.pattern;
 import static cpww.utils.Util.returnLowercaseLemma;
 
 public class SubSentWords implements Comparable, Serializable {
@@ -59,10 +59,9 @@ public class SubSentWords implements Comparable, Serializable {
     }
 
     private void setWordAndLemma(IndexedWord entity, Map<String, String> entityDict, boolean isEntity) {
-        String tok1 = entity.value().replaceAll("\n","");
+        String tok1 = entity.originalText().replaceAll("\n","");
         this.lemma = tok1;
         this.word = tok1;
-        Pattern pattern = Pattern.compile("[A-Z]+[\\d]+");
         Matcher matcher = pattern.matcher(tok1);
         boolean patternFound = false;
         while (matcher.find()) {

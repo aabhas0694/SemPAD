@@ -12,8 +12,6 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -112,6 +110,7 @@ public class CPWW {
     }
 
     private static void frequent_pattern_mining(int iteration) throws Exception {
+        logger.log(Level.INFO, "STARTING: Frequent Pattern Mining - Iteration " + iteration);
         frequentPatterns.clear();
 
         List<SubSentWords> tokens = new ArrayList<>();
@@ -397,8 +396,8 @@ public class CPWW {
 
         int lineNo = 0, totalNoOfSentences = 0;
         final boolean indexGiven = (line != null && line.split("\t").length != 1);
-        int phraseCount = 0;
-        Pattern pattern = Pattern.compile("[\\w\\d]+_[\\w\\d]+");
+//        int phraseCount = 0;
+//        Pattern pattern = Pattern.compile("[\\w\\d]+_[\\w\\d]+");
         while (line != null) {
             if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
@@ -406,17 +405,17 @@ public class CPWW {
             String index = indexGiven ? line.split("\t")[0] : String.valueOf(lineNo);
             String sent = indexGiven ? line.split("\t")[1] : line;
             if (sent.split(" ").length > 4 && sent.split(" ").length < 100) {
-                Matcher matcher = pattern.matcher(sent);
-                Set<String> foundMatches = new HashSet<>();
-                while (matcher.find()) {
-                    String match = matcher.group();
-                    if (!foundMatches.contains(match)) {
-                        foundMatches.add(match);
-                        String newEntity = "PHRASEGEN" + phraseCount++;
-                        sent = sent.replace(match, newEntity);
-                        entityDictionary.put(newEntity, match);
-                    }
-                }
+//                Matcher matcher = pattern.matcher(sent);
+//                Set<String> foundMatches = new HashSet<>();
+//                while (matcher.find()) {
+//                    String match = matcher.group();
+//                    if (!foundMatches.contains(match)) {
+//                        foundMatches.add(match);
+//                        String newEntity = "PHRASEGEN" + phraseCount++;
+//                        sent = sent.replace(match, newEntity);
+//                        entityDictionary.put(newEntity, match);
+//                    }
+//                }
                 sentenceCollector.add(new SentenceProcessor(sent, index));
                 totalNoOfSentences++;
             }
@@ -652,6 +651,7 @@ public class CPWW {
                 logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
                 if (!load_metapatternData) frequent_pattern_mining(iterations);
             }
+            if (iterations <= noOfPushUps) noOfPushUps = iterations - 1;
             savePatternClassificationData();
             patternList.add(returnSortedPatternList(multiPattern));
             if (includeContext) patternList.add(returnSortedPatternList(singlePattern));

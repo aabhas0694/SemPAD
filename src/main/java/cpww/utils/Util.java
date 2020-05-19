@@ -11,11 +11,13 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Util {
     public static final String[] articles = new String[]{"a", "an", "the"};
     public static final String patternRegexFilter = "[`$\\d%'\\.,\\*/\\(\\):;\\!\\-\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d%'\\.,\\*/\\(\\):;\\!\\-\\|\"\\\\]*";
+    public static final Pattern pattern = Pattern.compile("[A-Z]+[\\d]+");
 
 
     public static int sum(List<Integer> abc){
