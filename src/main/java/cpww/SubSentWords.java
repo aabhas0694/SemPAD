@@ -59,7 +59,7 @@ public class SubSentWords implements Comparable, Serializable {
     }
 
     private void setWordAndLemma(IndexedWord entity, Map<String, String> entityDict, boolean isEntity) {
-        String tok1 = entity.originalText().replaceAll("\n","");
+        String tok1 = entity.word().trim();
         this.lemma = tok1;
         this.word = tok1;
         Matcher matcher = pattern.matcher(tok1);

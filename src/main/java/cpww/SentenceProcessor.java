@@ -38,23 +38,24 @@ public class SentenceProcessor implements Serializable {
     public void processSentence(StanfordCoreNLP pipeline, Map<String, String> entityDict, String[] nerTypes) {
         if (this.sentence == null) return;
         List<String> entities = new ArrayList<>();
-        List<String> temp = new ArrayList<>();
+        StringBuilder newSentence = new StringBuilder();
         for (String word : this.sentence.split(" ")) {
             if (containsEntity(word, nerTypes)) {
-                Matcher matcher = pattern.matcher(word);
-                temp.add(word.replaceAll("([A-Z]+)(\\d)+","$1"));
-                while (matcher.find()) entities.add(matcher.group());
+                newSentence.append(word.replaceAll("([A-Z]+)(\\d)+","$1").replace("-","_")).append(" ");
+                if (word.contains("-")) entities.add(word);
+                else {
+                    Matcher matcher = pattern.matcher(word);
+                    while (matcher.find()) entities.add(matcher.group());
+                }
             } else {
-                temp.add(word);
+                newSentence.append(word).append(" ");
             }
         }
-        String newSentence = String.join(" ", temp);
-        SemanticGraph semanticGraph = generateSemanticGraph(newSentence, pipeline);
-        List<IndexedWord> indexedWords = semanticGraph.vertexListSorted();
+        SemanticGraph semanticGraph = generateSemanticGraph(newSentence.toString().trim(), pipeline);
         int j = 0;
-        for (IndexedWord i : indexedWords) {
-            if (containsEntity(i.value(), nerTypes)) {
-                i.setOriginalText(entities.get(j++));
+        for (IndexedWord i : semanticGraph.vertexListSorted()) {
+            if (containsEntity(i.word(), nerTypes)) {
+                i.setWord(entities.get(j++));
                 if (j == entities.size()) break;
             }
         }

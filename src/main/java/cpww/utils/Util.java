@@ -13,6 +13,7 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Util {
     public static final String[] articles = new String[]{"a", "an", "the"};
@@ -166,7 +167,10 @@ public class Util {
     }
 
     public static boolean containsEntity(String subRoot, String[] nerTypes) {
-        return Arrays.stream(nerTypes).anyMatch(subRoot::contains);
+        Stream<String> stream = Arrays.stream(nerTypes).parallel();
+        boolean found = stream.anyMatch(subRoot::contains);
+        stream.close();
+        return found;
     }
 
     public static int returnEncodeIndex(List<SubSentWords> encodeList, String encoding) {
@@ -313,7 +317,7 @@ public class Util {
     }
 
     private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
-        return (double) maxNerCount(patternList) + metaPattern.replace("_", " ").split(" ").length/20.0;
+        return (double) maxNerCount(patternList) + metaPattern.replaceAll("[_\\-]", " ").split(" ").length/20.0;
     }
 
     private static boolean noConjugateCheck(List<SubSentWords> mainSequence, List<Integer> storingIndex) {
@@ -333,12 +337,6 @@ public class Util {
             }
         }
         return true;
-    }
-
-    private static List<String> returnEntitiesFromPattern(String patternOutput) {
-        String entities = patternOutput.split("\t")[2];
-        String[] entityList = String.join(",", entities.substring(1, entities.length() - 1).split(" , ")).split(", ");
-        return Arrays.asList(entityList);
     }
 
     private static SVOClause returnClauseComponents(IndexedWord parent, SemanticGraph semanticGraph) {
