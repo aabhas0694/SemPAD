@@ -56,7 +56,7 @@ public class MetaPattern {
     }
 
     /**
-     * Checks if all entities are not placed one after the other at consecutive positions.
+     * Checks if all entities are not placed one after the other at consecutive positions and length of pattern without hyphens is not 2.
      * @return If so, returns true, else false.
      */
     private boolean isEntityContinuous() {
@@ -99,7 +99,7 @@ public class MetaPattern {
             }
         }
         if (startIndex >= endIndex || Arrays.asList(splitPattern).subList(startIndex, endIndex + 1).stream()
-                .noneMatch(s -> !entityContainingWords.contains(s) && !Arrays.asList(articles).contains(s))) {
+                .noneMatch(s -> (s.contains("-") || !entityContainingWords.contains(s)) && !Arrays.asList(articles).contains(s))) {
             this.valid = false;
             this.clippedMetaPattern = null;
             return;
