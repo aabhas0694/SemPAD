@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import java.util.TreeSet;
 import java.util.Queue;
 import java.util.Collections;
-import java.util.regex.Matcher;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.IndexedWord;
@@ -37,28 +36,7 @@ public class SentenceProcessor implements Serializable {
 
     public void processSentence(StanfordCoreNLP pipeline, Map<String, String> entityDict, String[] nerTypes) {
         if (this.sentence == null) return;
-        List<String> entities = new ArrayList<>();
-        StringBuilder newSentence = new StringBuilder();
-        for (String word : this.sentence.split(" ")) {
-            if (containsEntity(word, nerTypes)) {
-                newSentence.append(word.replaceAll("([A-Z]+)(\\d)+","$1").replace("-","_")).append(" ");
-                if (word.contains("-")) entities.add(word);
-                else {
-                    Matcher matcher = pattern.matcher(word);
-                    while (matcher.find()) entities.add(matcher.group());
-                }
-            } else {
-                newSentence.append(word).append(" ");
-            }
-        }
-        SemanticGraph semanticGraph = generateSemanticGraph(newSentence.toString().trim(), pipeline);
-        int j = 0;
-        for (IndexedWord i : semanticGraph.vertexListSorted()) {
-            if (containsEntity(i.word(), nerTypes)) {
-                i.setWord(entities.get(j++));
-                if (j == entities.size()) break;
-            }
-        }
+        SemanticGraph semanticGraph = generateSemanticGraph(this.sentence.replace("-", "_").trim(), pipeline);
         Map<IndexedWord, String> encodeTree = encodeTree(semanticGraph, semanticGraph.getFirstRoot(), "A_root", new HashMap<>());
         generateReverseWordEncoding(encodeTree, entityDict, nerTypes);
         Map<IndexedWord, TreeSet<IndexedWord>> subTree = splitNoun(semanticGraph.getFirstRoot(), new HashMap<>(),  semanticGraph, nerTypes);

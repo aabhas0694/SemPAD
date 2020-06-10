@@ -563,7 +563,7 @@ public class CPWW {
             if (entityCount == 0 || (i == 0 && entityCount < 2)) continue;
             int endIndex = -1, startIndex = subSent.size();
             for (String metaPattern : patternList.get(i).keySet()) {
-                if (i != 0 && (multiCount > 0 || metaPattern.replaceAll("[_\\-]", " ").split(" ").length < 3)) break;
+                if (i != 0 && (multiCount > 0 || metaPattern.replaceAll("[_]+", " ").split(" ").length < 3)) break;
                 PatternMatchIndices matchFound = check_subsequence(subSent, true, metaPattern, nerTypes);
                 if (matchFound != null) {
                     int newStart = matchFound.getEntityIndices().get(0), newEnd = matchFound.getEntityIndices().get(matchFound.getEntityIndices().size() - 1);

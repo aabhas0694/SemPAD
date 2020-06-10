@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 public class Util {
     public static final String[] articles = new String[]{"a", "an", "the"};
-    public static final String patternRegexFilter = "[`$\\d%'\\.,\\*/\\(\\):;\\!\\-\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d%'\\.,\\*/\\(\\):;\\!\\-\\|\"\\\\]*";
+    public static final String patternRegexFilter = "[`$\\d%'\\.,><\\*/\\(\\):;_+\\!\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d%'\\.,><\\*/\\(\\):;_+\\!\\|\"\\\\]*";
     public static final Pattern pattern = Pattern.compile("[A-Z]+[\\d]+");
 
 
@@ -317,7 +317,7 @@ public class Util {
     }
 
     private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
-        return (double) maxNerCount(patternList) + metaPattern.replaceAll("[_\\-]", " ").split(" ").length/20.0;
+        return (double) maxNerCount(patternList) + metaPattern.replaceAll("[_]+", " ").split(" ").length/20.0;
     }
 
     private static boolean noConjugateCheck(List<SubSentWords> mainSequence, List<Integer> storingIndex) {
