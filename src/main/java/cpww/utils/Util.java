@@ -162,7 +162,7 @@ public class Util {
     }
 
     public static String returnLowercaseLemma(IndexedWord word) {
-        if (word.lemma() == null) word.setLemma(Morphology.lemmaStatic(word.value(), word.tag()));
+        if (word.lemma() == null) word.setLemma(Morphology.lemmaStatic(word.word(), word.tag()));
         return word.lemma().toLowerCase();
     }
 
@@ -317,7 +317,7 @@ public class Util {
     }
 
     private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
-        return (double) maxNerCount(patternList) + metaPattern.replaceAll("[_]+", " ").split(" ").length/20.0;
+        return (double) maxNerCount(patternList) + metaPattern.replaceAll("[_\\-]+", " ").split(" ").length/20.0;
     }
 
     private static boolean noConjugateCheck(List<SubSentWords> mainSequence, List<Integer> storingIndex) {

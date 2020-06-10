@@ -37,6 +37,9 @@ public class SentenceProcessor implements Serializable {
     public void processSentence(StanfordCoreNLP pipeline, Map<String, String> entityDict, String[] nerTypes) {
         if (this.sentence == null) return;
         SemanticGraph semanticGraph = generateSemanticGraph(this.sentence.replace("-", "_").trim(), pipeline);
+        for (IndexedWord iw: semanticGraph.vertexListSorted()) {
+            if (iw.word().contains("_")) iw.setWord(iw.word().replace("_", "-"));
+        }
         Map<IndexedWord, String> encodeTree = encodeTree(semanticGraph, semanticGraph.getFirstRoot(), "A_root", new HashMap<>());
         generateReverseWordEncoding(encodeTree, entityDict, nerTypes);
         Map<IndexedWord, TreeSet<IndexedWord>> subTree = splitNoun(semanticGraph.getFirstRoot(), new HashMap<>(),  semanticGraph, nerTypes);

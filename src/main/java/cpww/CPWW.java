@@ -12,6 +12,8 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -396,8 +398,8 @@ public class CPWW {
 
         int lineNo = 0, totalNoOfSentences = 0;
         final boolean indexGiven = (line != null && line.split("\t").length != 1);
-//        int phraseCount = 0;
-//        Pattern pattern = Pattern.compile("[\\w\\d]+_[\\w\\d]+");
+        int phraseCount = 0;
+        Pattern pattern = Pattern.compile("[\\w\\d]+_[\\w\\d]+");
         while (line != null) {
             if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
@@ -405,17 +407,17 @@ public class CPWW {
             String index = indexGiven ? line.split("\t")[0] : String.valueOf(lineNo);
             String sent = indexGiven ? line.split("\t")[1] : line;
             if (sent.split(" ").length > 4 && sent.split(" ").length < 100) {
-//                Matcher matcher = pattern.matcher(sent);
-//                Set<String> foundMatches = new HashSet<>();
-//                while (matcher.find()) {
-//                    String match = matcher.group();
-//                    if (!foundMatches.contains(match)) {
-//                        foundMatches.add(match);
-//                        String newEntity = "PHRASEGEN" + phraseCount++;
-//                        sent = sent.replace(match, newEntity);
-//                        entityDictionary.put(newEntity, match);
-//                    }
-//                }
+                Matcher matcher = pattern.matcher(sent);
+                Set<String> foundMatches = new HashSet<>();
+                while (matcher.find()) {
+                    String match = matcher.group();
+                    if (!foundMatches.contains(match)) {
+                        foundMatches.add(match);
+                        String newEntity = "PHRASEGEN" + phraseCount++;
+                        sent = sent.replace(match, newEntity);
+                        entityDictionary.put(newEntity, match);
+                    }
+                }
                 sentenceCollector.add(new SentenceProcessor(sent, index));
                 totalNoOfSentences++;
             }
@@ -563,7 +565,7 @@ public class CPWW {
             if (entityCount == 0 || (i == 0 && entityCount < 2)) continue;
             int endIndex = -1, startIndex = subSent.size();
             for (String metaPattern : patternList.get(i).keySet()) {
-                if (i != 0 && (multiCount > 0 || metaPattern.replaceAll("[_]+", " ").split(" ").length < 3)) break;
+                if (i != 0 && (multiCount > 0 || metaPattern.replaceAll("[_\\-]+", " ").split(" ").length < 3)) break;
                 PatternMatchIndices matchFound = check_subsequence(subSent, true, metaPattern, nerTypes);
                 if (matchFound != null) {
                     int newStart = matchFound.getEntityIndices().get(0), newEnd = matchFound.getEntityIndices().get(matchFound.getEntityIndices().size() - 1);
