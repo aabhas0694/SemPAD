@@ -407,26 +407,27 @@ public class CPWW {
             if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
             }
-            if (line.split("\t").length != 2) continue;
-            String index = indexGiven ? line.split("\t")[0] : String.valueOf(lineNo);
-            String sent = indexGiven ? line.split("\t")[1] : line;
-            if (sent.split(" ").length > 4 && sent.split(" ").length < 100) {
-                Matcher matcher = pattern.matcher(sent);
-                Set<String> foundMatches = new HashSet<>();
-                while (matcher.find()) {
-                    String match = matcher.group();
-                    if (!foundMatches.contains(match)) {
-                        foundMatches.add(match);
-                        String newEntity = "PHRASEGEN" + phraseCount++;
-                        sent = sent.replace(match, newEntity);
-                        entityDictionary.put(newEntity, match);
+            if (!indexGiven || line.split("\t").length == 2) {
+                String index = indexGiven ? line.split("\t")[0] : String.valueOf(lineNo);
+                String sent = indexGiven ? line.split("\t")[1] : line;
+                if (sent.split(" ").length > 4 && sent.split(" ").length < 100) {
+                    Matcher matcher = pattern.matcher(sent);
+                    Set<String> foundMatches = new HashSet<>();
+                    while (matcher.find()) {
+                        String match = matcher.group();
+                        if (!foundMatches.contains(match)) {
+                            foundMatches.add(match);
+                            String newEntity = "PHRASEGEN" + phraseCount++;
+                            sent = sent.replace(match, newEntity);
+                            entityDictionary.put(newEntity, match);
+                        }
                     }
+                    sentenceCollector.add(new SentenceProcessor(sent, index));
                 }
-                sentenceCollector.add(new SentenceProcessor(sent, index));
-            }
-            if (sentenceCollector.size() == batchSize) {
-                processParallelHelper(sentenceCollector, noOfBatches++);
-                sentenceCollector.clear();
+                if (sentenceCollector.size() == batchSize) {
+                    processParallelHelper(sentenceCollector, noOfBatches++);
+                    sentenceCollector.clear();
+                }
             }
             line = reader.readLine();
             lineNo++;
