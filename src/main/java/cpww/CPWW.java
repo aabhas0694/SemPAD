@@ -413,15 +413,17 @@ public class CPWW {
                 String index = indexGiven ? line.split("\t")[0] : String.valueOf(lineNo);
                 String sent = indexGiven ? line.split("\t")[1] : line;
                 if (sent.split(" ").length > 4 && sent.split(" ").length < 100) {
-                    Matcher matcher = pattern.matcher(sent);
-                    Set<String> foundMatches = new HashSet<>();
-                    while (matcher.find()) {
-                        String match = matcher.group();
-                        if (!foundMatches.contains(match)) {
-                            foundMatches.add(match);
-                            String newEntity = "PHRASEGEN" + phraseCount++;
-                            sent = sent.replace(match, newEntity);
-                            entityDictionary.put(newEntity, match);
+                    if ( noOfBatches >= startBatch) {
+                        Matcher matcher = pattern.matcher(sent);
+                        Set<String> foundMatches = new HashSet<>();
+                        while (matcher.find()) {
+                            String match = matcher.group();
+                            if (!foundMatches.contains(match)) {
+                                foundMatches.add(match);
+                                String newEntity = "PHRASEGEN" + phraseCount++;
+                                sent = sent.replace(match, newEntity);
+                                entityDictionary.put(newEntity, match);
+                            }
                         }
                     }
                     sentenceCollector.add(new SentenceProcessor(sent, index));
