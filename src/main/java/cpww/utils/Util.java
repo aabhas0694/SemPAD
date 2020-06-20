@@ -115,7 +115,7 @@ public class Util {
                 mainClause.setSubject(child);
             } else if (mainClause.foundSubject() && isSplitPoint(child, nerTypes) && child.index() > verb.index()) {
                 mainClause.setObject(child);
-            } else if (semanticGraph.getEdge(verb, child).toString().contains("cc") && child.index() > verb.index()) {
+            } else if (semanticGraph.getEdge(verb, child).toString().contains("cc")) {
                 potentialDeletions.add(child);
             } else if (semanticGraph.getEdge(verb, child).toString().contains("conj") && child.index() > verb.index()) {
                 mainClause.setConjunct(child);
@@ -137,9 +137,8 @@ public class Util {
                 subTree.get(verb).addAll(Collections.singletonList(conjugateClause.getObject()));
             }
             subTree.put(mainClause.getConjunct(), temp);
-            return potentialDeletions;
         }
-        return null;
+        return potentialDeletions.isEmpty() ? null : potentialDeletions;
     }
 
     public static List<SubSentWords> sort_leafToTop(SentenceProcessor sentence){
@@ -253,6 +252,21 @@ public class Util {
                 returnPatternWeight(o2, patternList.get(o2)).compareTo(returnPatternWeight(o1, patternList.get(o1))));
         l.forEach(s -> ans.put(s, maxNerCount(patternList.get(s))));
         return ans;
+    }
+
+    public static int totalLines(String inputFileName, int noOfLines) throws IOException {
+        int count = 0;
+        BufferedReader reader = new BufferedReader(new FileReader(inputFileName));
+        String line = reader.readLine();
+        while (line != null) {
+            if (noOfLines > 0 && count == noOfLines) {
+                break;
+            }
+            count++;
+            line = reader.readLine();
+        }
+        reader.close();
+        return count;
     }
 
     public static String folderNameConsistency(String folderName) {

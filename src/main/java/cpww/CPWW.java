@@ -392,11 +392,14 @@ public class CPWW {
     private static void buildSentences() throws Exception {
         logger.log(Level.INFO, "STARTING: Sentences Processing");
         String inputFile = inputFolder + "annotated.txt";
+        int totalNoOfSentences = totalLines(inputFile, noOfLines);
+        logger.log(Level.INFO, "Total Number of Sentences: " + totalNoOfSentences);
+
         List<SentenceProcessor> sentenceCollector = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(inputFile));
         String line = reader.readLine();
 
-        int lineNo = 0, totalNoOfSentences = 0;
+        int lineNo = 0;
         final boolean indexGiven = (line != null && line.split("\t").length != 1);
         int phraseCount = 0;
         Pattern pattern = Pattern.compile("[\\w\\d]+_[\\w\\d]+");
@@ -404,6 +407,7 @@ public class CPWW {
             if (noOfLines > 0 && lineNo == noOfLines) {
                 break;
             }
+            if (line.split("\t").length != 2) continue;
             String index = indexGiven ? line.split("\t")[0] : String.valueOf(lineNo);
             String sent = indexGiven ? line.split("\t")[1] : line;
             if (sent.split(" ").length > 4 && sent.split(" ").length < 100) {
@@ -419,7 +423,6 @@ public class CPWW {
                     }
                 }
                 sentenceCollector.add(new SentenceProcessor(sent, index));
-                totalNoOfSentences++;
             }
             if (sentenceCollector.size() == batchSize) {
                 processParallelHelper(sentenceCollector, noOfBatches++);
@@ -434,7 +437,6 @@ public class CPWW {
             processParallelHelper(sentenceCollector, noOfBatches++);
             sentenceCollector.clear();
         }
-        logger.log(Level.INFO, "Total Number of Sentences: " + totalNoOfSentences);
         logger.log(Level.INFO, "COMPLETED: Sentences Processing");
     }
 
@@ -458,12 +460,15 @@ public class CPWW {
     private static void saveSentenceBreakdown(int batchIterNo, List<SentenceProcessor> sentenceCollector, int tempIter) throws Exception {
         logger.log(Level.INFO, "STARTING: Sentence Breakdown Serialization for batch " + batchIterNo);
         String directory = inputFolder + "ProcessedInput/" + batchSize + "/";
-        String prefix = tempIter == -1 ? "sentenceBatch"  + batchIterNo + "." + noOfLines : "t" + batchIterNo + tempIter;
-        File file = new File(directory + prefix + ".txt");
+        String prefix = tempIter == -1 ? "sentenceBatch"  + batchIterNo + "." + noOfLines : "t" + batchIterNo;
+        File file = new File(directory + prefix + (tempIter == -1 ? "" : tempIter) + ".txt");
         FileOutputStream fileOut = new FileOutputStream(file);
         ObjectOutputStream out = new ObjectOutputStream(fileOut);
-        if (tempIter != -1) {
-            file.deleteOnExit();
+        if (tempIter != -1) file.deleteOnExit();
+        if (tempIter > 2) {
+            File file1 = new File(directory + prefix  + (tempIter - 1) + ".txt");
+            if (file1.delete()) logger.log(Level.INFO, "Deleted previous iteration file of batch " + batchIterNo);
+            else logger.log(Level.INFO, "Could not delete previous iteration file of batch " + batchIterNo);
         }
         out.writeObject(sentenceCollector);
         out.close();

@@ -1,10 +1,12 @@
-1233445_0	LOCATION235448 plays LOCATION326961, and LOCATION406449 meets LOCATION111212 on Friday.
-1233445_1	LOCATION326961 plays LOCATION406449, and LOCATION235448 meets LOCATION111212 on Saturday.
+1233445_0	LOCATION235448 plays LOCATION326961 and LOCATION406449 meets LOCATION111212 on Friday.
+1233445_1	LOCATION326961 plays LOCATION406449 and LOCATION235448 meets LOCATION111212 on Saturday.
 1234567_0	PERSON121818 was born and died in LOCATION121817.
 1234567_1	PERSON121818 and PERSON147943 were born and died in LOCATION121817.
 1234567_2	PERSON121818 was born but did not die in LOCATION121817.
 1234567_3	PERSON121818 was born in LOCATION194881 and died in LOCATION121817.
 1234567_4	PERSON121818 was born in LOCATION194881, and PERSON147943 was born in LOCATION121817.
+0	But that spasm of irritation by a master intimidator was minor compared with what so-called-PERSON0 , the erratic former world_chess_champion , dished out in DATE1 at a news conference in LOCATION2 , LOCATION3 .
+95174	Opposed though he was to LOCATION492704 involvement in LOCATION492705 , he was critical of the student left in the NUMBER492706's .
 1790500_2	PERSON9814 now lives with his wife, PERSON9815, in a sprawling, gated four-bedroom ranch in the LOCATION9816 area of LOCATION9817.
 1734230_11	We expect that LOCATION331451 will propose a civil-military separation plan that is credible, transparent, and defensible from a nonproliferation standpoint, White House officials told ORGANIZATION331452 last week, in response to a list of 82 questions submitted by Senator Richard G. Lugar, Republican of LOCATION331451na.
 1777510_1	At the ORGANIZATION406446, President PERSON406447's press secretary, PERSON406448, said, I 'm not sure at this juncture we're going to step in and put up a stop sign, although he called on LOCATION406449 to practice restraint and said Mr. PERSON406447 was very much concerned about a growing human crisis in southern LOCATION406451.
