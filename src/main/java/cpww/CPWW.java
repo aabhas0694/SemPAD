@@ -31,6 +31,7 @@ public class CPWW {
     private static boolean load_metapatternData;
     private static int noOfPushUps;
     private static boolean includeContext;
+    private static int startBatch;
     private static int batchSize;
 
     private static String[] nerTypes;
@@ -75,6 +76,7 @@ public class CPWW {
         load_metapatternData = Boolean.parseBoolean(prop.getProperty("load_metapatternData"));
         noOfPushUps = Integer.parseInt(prop.getProperty("noOfPushUps"));
         includeContext = Boolean.parseBoolean(prop.getProperty("includeContext"));
+        startBatch = Integer.parseInt(prop.getProperty("startFromBatch"));
         batchSize = Integer.parseInt(prop.getProperty("batchSize"));
         int threadCount = Integer.parseInt(prop.getProperty("threadCount"));
 
@@ -425,8 +427,9 @@ public class CPWW {
                     sentenceCollector.add(new SentenceProcessor(sent, index));
                 }
                 if (sentenceCollector.size() == batchSize) {
-                    processParallelHelper(sentenceCollector, noOfBatches++);
+                    if (noOfBatches >= startBatch) processParallelHelper(sentenceCollector, noOfBatches);
                     sentenceCollector.clear();
+                    noOfBatches++;
                 }
             }
             line = reader.readLine();
