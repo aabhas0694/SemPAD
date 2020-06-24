@@ -89,7 +89,7 @@ public class CPWW {
         if (load_sentenceBreakdownData) {
             String directory = inputFolder + "ProcessedInput/" + batchSize + "/";
             if (!new File(directory).exists()) throw new IOException("Sentence breakdown data does not exist for given batch size.");
-            noOfBatches = countSavedBatches(directory, noOfLines);
+            noOfBatches = countSavedBatches(directory, noOfLines, startBatch);
             if (noOfBatches == 0) throw new IOException("Sentence Breakdown Data does not exist.");
         }
         makingDir(outputFolder);
@@ -122,28 +122,25 @@ public class CPWW {
         Map<String, List<Integer>> valid_pattern = new HashMap<>();
         List<SentenceProcessor> sentenceCollector;
         int tokenNumber = 0;
-        String token;
-        for (int batchNo = 0; batchNo < noOfBatches; batchNo++) {
+        for (int batchNo = startBatch; batchNo < noOfBatches; batchNo++) {
             sentenceCollector = loadSentenceBreakdown(batchNo, iteration == 1 ? -1 : iteration);
             for (SentenceProcessor sentence : sentenceCollector) {
                 Map<SubSentWords, List<SubSentWords>> sentBreak = sentence.getSentenceBreakdown();
                 for (SubSentWords key : sentBreak.keySet()) {
                     List<SubSentWords> list = sentBreak.get(key);
                     for (SubSentWords word : list) {
-                        token = word.getLemma();
                         tokens.add(word);
-                        updateMapCount(dict_token, token, tokenNumber++);
-                        updateMapCount(valid_pattern, token, 1);
+                        updateMapCount(dict_token, word.getLemma(), tokenNumber++);
+                        updateMapCount(valid_pattern, word.getLemma(), 1);
                     }
                     tokens.add(new SubSentWords("$", "$", "", -1));
                     tokenNumber++;
                 }
                 for (SubSentWords key : sentence.getPushedUpSentences().keySet()) {
                     for (SubSentWords word : sentence.getPushedUpSentences().get(key)) {
-                        token = word.getLemma();
                         tokens.add(word);
-                        updateMapCount(dict_token, token, tokenNumber++);
-                        updateMapCount(valid_pattern, token, 1);
+                        updateMapCount(dict_token, word.getLemma(), tokenNumber++);
+                        updateMapCount(valid_pattern, word.getLemma(), 1);
                     }
                     tokens.add(new SubSentWords("$", "$", "", -1));
                     tokenNumber++;
@@ -602,7 +599,7 @@ public class CPWW {
         String outputDirectory = outputFolder;
         String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
         BufferedWriter patternOutput = new BufferedWriter(new FileWriter(outputDirectory + "patternOutput" + suffix));
-        for (int batchNo = 0; batchNo < noOfBatches; batchNo++) {
+        for (int batchNo = startBatch; batchNo < noOfBatches; batchNo++) {
             List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, noOfPushUps + 1);
             String[] outputArray = new String[sentenceCollectorBatch.size()];
             forkJoinPool.submit(() -> IntStream.range(0, sentenceCollectorBatch.size()).parallel()
@@ -654,7 +651,7 @@ public class CPWW {
             while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
                 prevPatternCount = allPattern.size();
                 logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
-                for (int batchNo = 0; batchNo < noOfBatches; batchNo++) {
+                for (int batchNo = startBatch; batchNo < noOfBatches; batchNo++) {
                     List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, iterations == 1 ? -1 : iterations);
                     forkJoinPool.submit(() -> sentenceCollectorBatch.parallelStream().forEach(CPWW::hierarchicalPushUp)).get();
                     saveSentenceBreakdown(batchNo, sentenceCollectorBatch, iterations + 1);
