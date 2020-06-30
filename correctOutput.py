@@ -24,7 +24,7 @@ def main(argv):
         print("Number of arguments should be 2. Type '-h' for help")
         sys.exit(2)
     output_folder = "/".join(input_file.split("/")[:-1]) + "/"
-    input_file_name = input_file[2:].split("/")[-1]
+    input_file_name = input_file.split("/")[-1][2:]
 
     print(len(entity_dictionary))
     pattern = re.compile(r'[A-Z]+[\d]+')

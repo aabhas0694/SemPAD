@@ -8,4 +8,4 @@ fi
 if [[ "$outputFolder" == "" ]]; then
   outputFolder="$inputFolder/Output"
 fi
-python3 correctOutput.py -i "$outputFolder"/patternOutput."$noOfLines"_"$minimumSupport".txt -d "$inputFolder"/dict.json
+python3 correctOutput.py -i "$outputFolder"/c_patternOutput."$noOfLines"_"$minimumSupport".txt -d "$inputFolder"/dict.json
