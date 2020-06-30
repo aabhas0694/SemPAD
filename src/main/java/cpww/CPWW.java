@@ -598,7 +598,7 @@ public class CPWW {
         logger.log(Level.INFO, "STARTING: Pattern Matching");
         String outputDirectory = outputFolder;
         String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
-        BufferedWriter patternOutput = new BufferedWriter(new FileWriter(outputDirectory + "patternOutput" + suffix));
+        BufferedWriter patternOutput = new BufferedWriter(new FileWriter(outputDirectory + "c_patternOutput" + suffix));
         for (int batchNo = startBatch; batchNo < noOfBatches; batchNo++) {
             List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, noOfPushUps + 1);
             String[] outputArray = new String[sentenceCollectorBatch.size()];
@@ -633,7 +633,7 @@ public class CPWW {
         try {
             initialization();
             if (!load_sentenceBreakdownData) {
-                buildDictionary();
+//                buildDictionary();
                 buildSentences();
             }
             int prevPatternCount = 0;
