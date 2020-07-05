@@ -21,7 +21,7 @@ def main(argv):
         elif opt in ("-d", "--dfile"):
             if arg[-1] != "/": arg += '/'
             entity_dictionary = json.load(open(arg + "dict.json", encoding="utf-8"))
-            entity_type_file = [abc.rstrip() + "[\d]+" for abc in open(arg + "entityTypes.txt", encoding="utf-8")]
+            entity_type_file = ["<" + abc.rstrip() + "[\d]+>" for abc in open(arg + "entityTypes.txt", encoding="utf-8")]
     if len(opts) < 2:
         print("Number of arguments should be 2. Type '-h' for help")
         sys.exit(2)
@@ -37,8 +37,9 @@ def main(argv):
     for l in f1:
         matches = re.findall(pattern, l)
         for match in matches:
-            if match in entity_dictionary:
-                l = l.replace(match, entity_dictionary[match])
+            key_word = re.sub(r'<([A-Z]+[\d]+)>', r'\1', match)
+            if key_word in entity_dictionary:
+                l = l.replace(match, entity_dictionary[key_word])
         f2.write(l)
     f2.close()
     f1.close()

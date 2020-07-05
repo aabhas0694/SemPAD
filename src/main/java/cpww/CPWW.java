@@ -418,7 +418,7 @@ public class CPWW {
                             if (!foundMatches.contains(match)) {
                                 foundMatches.add(match);
                                 String newEntity = "PHRASEGEN" + phraseCount++;
-                                sent = sent.replace(match, newEntity);
+                                sent = sent.replace(match, "<" + newEntity + ">");
                                 entityDictionary.put(newEntity, match);
                             }
                         }
@@ -644,7 +644,7 @@ public class CPWW {
                 loadPatternClassificationData();
                 noOfPushUps = 1;
             } else {
-                logger.log(Level.INFO, "STARTING: Iterative Frequent Pattern Mining followed by Hierarchical Pushups");
+                logger.log(Level.INFO, "STARTING: Pattern Distillation");
                 frequent_pattern_mining(iterations);
             }
 
@@ -662,6 +662,9 @@ public class CPWW {
                 if (!load_metapatternData) frequent_pattern_mining(iterations);
             }
             if (iterations <= noOfPushUps) noOfPushUps = iterations - 1;
+            if (noOfPushUps == 0) {
+                throw new IOException("No patterns found.");
+            }
             savePatternClassificationData();
             patternList.add(returnSortedPatternList(multiPattern));
             if (includeContext) patternList.add(returnSortedPatternList(singlePattern));

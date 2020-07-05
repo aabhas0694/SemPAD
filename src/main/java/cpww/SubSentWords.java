@@ -64,14 +64,15 @@ public class SubSentWords implements Comparable, Serializable {
         this.word = tok1;
         Matcher matcher = pattern.matcher(tok1);
         boolean patternFound = false;
+        String match = null;
         while (matcher.find()) {
-            String match = matcher.group();
+            match = matcher.group(1);
             patternFound = true;
-            this.word = this.word.replace(match, entityDict.getOrDefault(match, match));
-            this.lemma = isEntity ? this.lemma.replace(match, match.replaceAll("([A-Z]+)(\\d)+","$1")) : this.word;
+            this.word = entityDict.containsKey(match) ? this.word.replace("<" + match + ">", entityDict.get(match)) : "<" + match + ">";
+            this.lemma = isEntity ? this.lemma.replace("<" + match + ">", match.replaceAll("([A-Z]+)(\\d)+","$1")) : this.word;
         }
         if (!isEntity) {
-            this.lemma = patternFound ? this.lemma.toLowerCase() : returnLowercaseLemma(entity);
+            this.lemma = patternFound ? (entityDict.containsKey(match) ? this.lemma.toLowerCase() : this.lemma) : returnLowercaseLemma(entity);
         }
     }
 

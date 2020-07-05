@@ -115,7 +115,7 @@ public class SentenceProcessor implements Serializable {
 
     private void generateReverseWordEncoding(Map<IndexedWord, String> encodeTree, Map<String, String> entityDict, String[] nerTypes) {
         for(Map.Entry<IndexedWord, String> entry : encodeTree.entrySet()){
-            boolean containsEntity = containsEntity(entry.getKey().value(), nerTypes);
+            boolean containsEntity = containsEntity(entry.getKey().word(), nerTypes);
             SubSentWords word = new SubSentWords(entry.getKey(), entry.getValue(), containsEntity, entityDict);
             this.reverseEncoding.put(entry.getValue(), word);
         }
