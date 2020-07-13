@@ -21,7 +21,7 @@ def main(argv):
         elif opt in ("-d", "--dfile"):
             if arg[-1] != "/": arg += '/'
             entity_dictionary = json.load(open(arg + "dict.json", encoding="utf-8"))
-            entity_type_file = ["<" + abc.rstrip() + "[\d]+>" for abc in open(arg + "entityTypes.txt", encoding="utf-8")]
+            entity_type_file = [abc.rstrip() + "[\d]+" for abc in open(arg + "entityTypes.txt", encoding="utf-8")]
     if len(opts) < 2:
         print("Number of arguments should be 2. Type '-h' for help")
         sys.exit(2)
@@ -30,17 +30,21 @@ def main(argv):
     input_file_name = input_file.split("/")[-1][2:]
     pattern_string = "|".join(entity_type_file)
 
-    print(len(entity_dictionary))
     pattern = re.compile(pattern_string)
     f1 = open(input_file, encoding="utf-8")
     f2 = open(output_folder + input_file_name, 'w', encoding="utf-8")
     for l in f1:
         matches = re.findall(pattern, l)
+        allMatchesFound = True
         for match in matches:
-            key_word = re.sub(r'<([A-Z]+[\d]+)>', r'\1', match)
+            key_word = re.sub(r'([A-Z]+[\d]+)', r'\1', match)
             if key_word in entity_dictionary:
                 l = l.replace(match, entity_dictionary[key_word])
-        f2.write(l)
+            else:
+                allMatchesFound = False
+                break
+        if allMatchesFound:
+            f2.write(l)
     f2.close()
     f1.close()
     os.remove(input_file)

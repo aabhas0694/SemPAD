@@ -55,6 +55,7 @@ public class CPWW {
     private static void initialization() throws Exception {
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma,parse,depparse");
+        props.setProperty("tokenize.options", "splitHyphenated=false");
         pipeline = new StanfordCoreNLP(props);
 
         InputStream input = new FileInputStream("config.properties");
@@ -89,8 +90,6 @@ public class CPWW {
         if (load_sentenceBreakdownData) {
             String directory = inputFolder + "ProcessedInput/" + batchSize + "/";
             if (!new File(directory).exists()) throw new IOException("Sentence breakdown data does not exist for given batch size.");
-            noOfBatches = countSavedBatches(directory, noOfLines, startBatch);
-            if (noOfBatches == 0) throw new IOException("Sentence Breakdown Data does not exist.");
         }
         makingDir(outputFolder);
         if (load_metapatternData) {
@@ -113,7 +112,7 @@ public class CPWW {
         }
     }
 
-    private static void frequent_pattern_mining(int iteration) throws Exception {
+    private static void frequent_pattern_mining(int iteration, int start, int end) throws Exception {
         logger.log(Level.INFO, "STARTING: Frequent Pattern Mining - Iteration " + iteration);
         frequentPatterns.clear();
 
@@ -122,7 +121,7 @@ public class CPWW {
         Map<String, List<Integer>> valid_pattern = new HashMap<>();
         List<SentenceProcessor> sentenceCollector;
         int tokenNumber = 0;
-        for (int batchNo = startBatch; batchNo < noOfBatches; batchNo++) {
+        for (int batchNo = start; batchNo < end; batchNo++) {
             sentenceCollector = loadSentenceBreakdown(batchNo, iteration == 1 ? -1 : iteration);
             for (SentenceProcessor sentence : sentenceCollector) {
                 Map<SubSentWords, List<SubSentWords>> sentBreak = sentence.getSentenceBreakdown();
@@ -418,7 +417,7 @@ public class CPWW {
                             if (!foundMatches.contains(match)) {
                                 foundMatches.add(match);
                                 String newEntity = "PHRASEGEN" + phraseCount++;
-                                sent = sent.replace(match, "<" + newEntity + ">");
+                                sent = sent.replace(match, newEntity);
                                 entityDictionary.put(newEntity, match);
                             }
                         }
@@ -594,12 +593,12 @@ public class CPWW {
         return out.isEmpty() ? null : out;
     }
 
-    private static void savePatternMatchingResults(List<Map<String, Integer>> patternList) throws Exception{
+    private static void savePatternMatchingResults(List<Map<String, Integer>> patternList, int start, int end, int epochNo) throws Exception{
         logger.log(Level.INFO, "STARTING: Pattern Matching");
         String outputDirectory = outputFolder;
-        String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
+        String suffix = "." + noOfLines + "_" + minimumSupport + "_" + epochNo + ".txt";
         BufferedWriter patternOutput = new BufferedWriter(new FileWriter(outputDirectory + "c_patternOutput" + suffix));
-        for (int batchNo = startBatch; batchNo < noOfBatches; batchNo++) {
+        for (int batchNo = start; batchNo < end; batchNo++) {
             List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, noOfPushUps + 1);
             String[] outputArray = new String[sentenceCollectorBatch.size()];
             forkJoinPool.submit(() -> IntStream.range(0, sentenceCollectorBatch.size()).parallel()
@@ -636,39 +635,69 @@ public class CPWW {
 //                buildDictionary();
                 buildSentences();
             }
-            int prevPatternCount = 0;
-            int iterations = 1;
+            noOfBatches = countSavedBatches(inputFolder + "ProcessedInput/" + batchSize + "/", noOfLines, startBatch);
+            if (noOfBatches == 0) throw new IOException("Sentence Breakdown Data does not exist.");
+            int epochSize = (noOfBatches - startBatch)/10 + 1;
 
-            List<Map<String, Integer>> patternList = new ArrayList<>();
-            if (load_metapatternData) {
-                loadPatternClassificationData();
-                noOfPushUps = 1;
-            } else {
-                logger.log(Level.INFO, "STARTING: Pattern Distillation");
-                frequent_pattern_mining(iterations);
-            }
+            for (int epoch = 0; epoch < epochSize; epoch++) {
+                int epochStart = startBatch + (epoch * 10);
+                int epochEndExclusive = Math.min(startBatch + ((epoch + 1) * 10), noOfBatches);
 
-            while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
-                prevPatternCount = allPattern.size();
-                logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
-                for (int batchNo = startBatch; batchNo < noOfBatches; batchNo++) {
-                    List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, iterations == 1 ? -1 : iterations);
-                    forkJoinPool.submit(() -> sentenceCollectorBatch.parallelStream().forEach(CPWW::hierarchicalPushUp)).get();
-                    saveSentenceBreakdown(batchNo, sentenceCollectorBatch, iterations + 1);
-                    sentenceCollectorBatch.clear();
-                    logger.log(Level.INFO, "PROCESSED: Batch Iteration Number - " + batchNo);
+                if (epochSize > 1) logger.log(Level.INFO, "STARTING: Epoch No." + (epoch + 1) + "\n");
+                int prevPatternCount = 0;
+                int iterations = 1;
+
+                List<Map<String, Integer>> patternList = new ArrayList<>();
+                if (load_metapatternData) {
+                    loadPatternClassificationData();
+                    noOfPushUps = 1;
+                } else {
+                    logger.log(Level.INFO, "STARTING: Pattern Distillation");
+                    frequent_pattern_mining(iterations, epochStart, epochEndExclusive);
                 }
-                logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
-                if (!load_metapatternData) frequent_pattern_mining(iterations);
+
+                while (iterations <= noOfPushUps && prevPatternCount < allPattern.size()) {
+                    prevPatternCount = allPattern.size();
+                    logger.log(Level.INFO, "STARTING: Hierarchical PushUps - Iteration " + iterations);
+                    for (int batchNo = epochStart; batchNo < epochEndExclusive; batchNo++) {
+                        List<SentenceProcessor> sentenceCollectorBatch = loadSentenceBreakdown(batchNo, iterations == 1 ? -1 : iterations);
+                        forkJoinPool.submit(() -> sentenceCollectorBatch.parallelStream().forEach(CPWW::hierarchicalPushUp)).get();
+                        saveSentenceBreakdown(batchNo, sentenceCollectorBatch, iterations + 1);
+                        sentenceCollectorBatch.clear();
+                        logger.log(Level.INFO, "PROCESSED: Batch Iteration Number - " + batchNo);
+                    }
+                    logger.log(Level.INFO, "COMPLETED: Hierarchical PushUps - Iteration " + iterations++);
+                    if (!load_metapatternData) frequent_pattern_mining(iterations, epochStart, epochEndExclusive);
+                }
+                if (iterations <= noOfPushUps) noOfPushUps = iterations - 1;
+                if (noOfPushUps == 0) {
+                    throw new IOException("No patterns found.");
+                }
+                savePatternClassificationData();
+                patternList.add(returnSortedPatternList(multiPattern));
+                if (includeContext) patternList.add(returnSortedPatternList(singlePattern));
+                savePatternMatchingResults(patternList, epochStart, epochEndExclusive, epoch);
             }
-            if (iterations <= noOfPushUps) noOfPushUps = iterations - 1;
-            if (noOfPushUps == 0) {
-                throw new IOException("No patterns found.");
+
+            logger.log(Level.INFO, "CREATING: Combined output file from all epochs.");
+            String suffix = "c_patternOutput." + noOfLines + "_" + minimumSupport + ".txt";
+            BufferedWriter bw = new BufferedWriter(new FileWriter(outputFolder + suffix));
+
+            for (int epoch = 0; epoch < epochSize; epoch++) {
+                suffix = "c_patternOutput." + noOfLines + "_" + minimumSupport + "_" + epoch + ".txt";
+                File file = new File(outputFolder + suffix);
+                BufferedReader br = new BufferedReader(new FileReader(file));
+                String line = br.readLine();
+                while (line != null) {
+                    bw.write(line + "\n");
+                    line = br.readLine();
+                }
+                br.close();
+                file.delete();
+                logger.log(Level.INFO, "DELETED: Epoch file " + file.getName());
             }
-            savePatternClassificationData();
-            patternList.add(returnSortedPatternList(multiPattern));
-            if (includeContext) patternList.add(returnSortedPatternList(singlePattern));
-            savePatternMatchingResults(patternList);
+            bw.close();
+            logger.log(Level.INFO, "CREATED: Combined output file from all epochs.");
         } catch (Exception e) {
             StringWriter errors = new StringWriter();
             e.printStackTrace(new PrintWriter(errors));

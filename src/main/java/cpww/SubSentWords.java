@@ -66,10 +66,10 @@ public class SubSentWords implements Comparable, Serializable {
         boolean patternFound = false;
         String match = null;
         while (matcher.find()) {
-            match = matcher.group(1);
+            match = matcher.group();
             patternFound = true;
-            this.word = entityDict.containsKey(match) ? this.word.replace("<" + match + ">", entityDict.get(match)) : "<" + match + ">";
-            this.lemma = isEntity ? this.lemma.replace("<" + match + ">", match.replaceAll("([A-Z]+)(\\d)+","$1")) : this.word;
+            this.word = this.word.replace(match, entityDict.getOrDefault(match, match));
+            this.lemma = isEntity ? this.lemma.replace(match, match.replaceAll("([A-Z]+)(\\d)+","$1")) : this.word;
         }
         if (!isEntity) {
             this.lemma = patternFound ? (entityDict.containsKey(match) ? this.lemma.toLowerCase() : this.lemma) : returnLowercaseLemma(entity);
