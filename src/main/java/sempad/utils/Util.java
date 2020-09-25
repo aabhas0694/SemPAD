@@ -1,9 +1,6 @@
-package cpww.utils;
+package sempad.utils;
 
-import cpww.MetaPattern;
-import cpww.PatternInstance;
-import cpww.SentenceProcessor;
-import cpww.SubSentWords;
+import sempad.*;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.process.Morphology;
 import edu.stanford.nlp.semgraph.SemanticGraph;
@@ -13,6 +10,7 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Util {
@@ -46,9 +44,9 @@ public class Util {
         return l;
     }
 
-    public static PatternMatchIndices check_subsequence(List<SubSentWords> main_sequence, boolean checkContinuity,
-                                           String mainPattern, String[] nerTypes){
-        String[] pattern = mainPattern.split(" ");
+    public static PatternMatchIndices check_subsequence(List<SubSentWord> main_sequence, boolean checkContinuity,
+                                                        MetaPattern metaPattern, String[] nerTypes){
+        String[] pattern = metaPattern.getSplitPattern();
         int m = main_sequence.size(), n = pattern.length;
         List<Integer> entityIndices = new ArrayList<>();
         List<Integer> actualSentLevelElementIndices = new ArrayList<>();
@@ -141,8 +139,8 @@ public class Util {
         return potentialDeletions.isEmpty() ? null : potentialDeletions;
     }
 
-    public static List<SubSentWords> sort_leafToTop(SentenceProcessor sentence){
-        List<SubSentWords> l = new ArrayList<>(sentence.getSentenceBreakdown().keySet());
+    public static List<SubSentWord> sort_leafToTop(SentenceProcessor sentence){
+        List<SubSentWord> l = new ArrayList<>(sentence.getSentenceBreakdown().keySet());
         // Arrange sub-roots from leaf to root of sentence
         l.sort((o1, o2) -> {
             Integer i2 = o2.getTrimmedEncoding().length();
@@ -172,13 +170,9 @@ public class Util {
         return found;
     }
 
-    public static int returnEncodeIndex(List<SubSentWords> encodeList, String encoding) {
-        for (int i = 0; i < encodeList.size(); i++) {
-            if (encodeList.get(i).getTrimmedEncoding().equals(encoding)) {
-                return i;
-            }
-        }
-        return -1;
+    public static OptionalInt returnEncodeIndex(List<SubSentWord> encodeList, String encoding) {
+        return IntStream.range(0, encodeList.size()).filter(j -> encodeList.get(j).
+                getTrimmedEncoding().equals(encoding)).findFirst();
     }
 
     public static void updateMapCount(Map<String, List<Integer>> map, String token, Integer value) {
@@ -194,6 +188,11 @@ public class Util {
         }
     }
 
+    public static MetaPattern returnMetaPattern(Set<SubSentWord> patternWords) {
+        List<SubSentWord> subSentWords = new ArrayList<>(patternWords);
+        return new MetaPattern(subSentWords.stream().map(SubSentWord::getLemma).toArray(String[]::new));
+    }
+
     public static int countSavedBatches(String directory, int noOfLines, int startBatch) {
         int batchIterNo = startBatch;
         boolean breakdownDataExists;
@@ -205,17 +204,13 @@ public class Util {
         return batchIterNo;
     }
 
-    public static void writePatternsToFile(BufferedWriter bw, Map<String, List<MetaPattern>> patternList) throws IOException {
+    public static void writePatternsToFile(BufferedWriter bw, Map<MetaPattern, Integer> patternList) throws IOException {
         Map<String, Integer> patternCount = new HashMap<>();
-        patternList.forEach((key, val) -> patternCount.put(key, frequencySumHelper(val)));
+        patternList.forEach((key, val) -> patternCount.put(String.join(" ", key.getSplitPattern()), val));
         for (Map.Entry<String, Integer> metaPattern : sortDecreasing(patternCount)) {
             bw.write(metaPattern.getKey() + "->" + metaPattern.getValue() + "\n");
         }
         bw.close();
-    }
-
-    private static int frequencySumHelper(List<MetaPattern> patterns) {
-        return patterns.stream().mapToInt(MetaPattern::getFrequency).sum();
     }
 
     public static void setOptionalParameterDefaults(Properties prop) {
@@ -232,6 +227,7 @@ public class Util {
         checkAndSetParameter(prop, "batchSize", "200000");
         checkAndSetParameter(prop, "threadCount", String.valueOf(Runtime.getRuntime().availableProcessors()));
         checkAndSetParameter(prop,"startFromBatch", "0");
+        checkAndSetParameter(prop,"splitSize", "10");
     }
 
     public static List<String> readList(FileReader fr) throws IOException {
@@ -246,13 +242,11 @@ public class Util {
         return ans;
     }
 
-    public static Map<String, Integer> returnSortedPatternList(Map<String, List<MetaPattern>> patternList) {
-        Map<String, Integer> ans = new LinkedHashMap<>();
-        List<String> l = new ArrayList<>(patternList.keySet());
+    public static List<MetaPattern> returnSortedPatternList(Map<MetaPattern, Integer> patternList) {
+        List<MetaPattern> l = new ArrayList<>(patternList.keySet());
         l.sort((o1, o2) ->
                 returnPatternWeight(o2, patternList.get(o2)).compareTo(returnPatternWeight(o1, patternList.get(o1))));
-        l.forEach(s -> ans.put(s, maxNerCount(patternList.get(s))));
-        return ans;
+        return l;
     }
 
     public static int totalLines(String inputFileName, int noOfLines) throws IOException {
@@ -282,17 +276,17 @@ public class Util {
         return encoding.split("_")[0];
     }
 
-    public static int noOfEntities(List<SubSentWords> subSent, String[] nerTypes) {
-        return (int) subSent.stream().map(SubSentWords::getLemma).filter(word -> Arrays.stream(nerTypes).anyMatch(word::contains)).count();
+    public static int noOfEntities(List<SubSentWord> subSent, String[] nerTypes) {
+        return (int) subSent.stream().map(SubSentWord::getLemma).filter(word -> Arrays.stream(nerTypes).anyMatch(word::contains)).count();
     }
 
     public static String createExtractionString(List<PatternInstance> patternOutputs) {
         Set<Integer> isSingleEntityPattern = new HashSet<>();
         Map<Integer, Set<Integer>> finalContextMapping = new HashMap<>();
-        Map<SubSentWords, List<Integer>> wordWisePatterns = new HashMap<>();
+        Map<SubSentWord, List<Integer>> wordWisePatterns = new HashMap<>();
 
         for (int i = 0; i < patternOutputs.size(); i++) {
-            List<SubSentWords> entityList = patternOutputs.get(i).getEntities();
+            List<SubSentWord> entityList = patternOutputs.get(i).getEntities();
             if (entityList.size() > 1) finalContextMapping.put(i, new HashSet<>());
             else isSingleEntityPattern.add(i);
             int finalI = i;
@@ -331,11 +325,11 @@ public class Util {
         return ans.toString();
     }
 
-    private static Double returnPatternWeight(String metaPattern, List<MetaPattern> patternList) {
-        return (double) maxNerCount(patternList) + metaPattern.replaceAll("[_\\-]+", " ").split(" ").length/20.0;
+    private static Double returnPatternWeight(MetaPattern metaPattern, int nerCount) {
+        return nerCount + metaPattern.toString().replaceAll("[_\\-]+", " ").split(" ").length/20.0;
     }
 
-    private static boolean noConjugateCheck(List<SubSentWords> mainSequence, List<Integer> storingIndex) {
+    private static boolean noConjugateCheck(List<SubSentWord> mainSequence, List<Integer> storingIndex) {
         List<String> encoding = storingIndex.stream().map(s -> mainSequence.get(s).getEncoding()).collect(Collectors.toList());
         String parent = null;
         for (String e : encoding) {
@@ -371,15 +365,5 @@ public class Util {
         if (!prop.containsKey(key) || prop.getProperty(key).equals("")) {
             prop.setProperty(key, value);
         }
-    }
-
-    private static Integer maxNerCount(List<MetaPattern> patterns) {
-        if (patterns.isEmpty()) return 0;
-        int max = Integer.MIN_VALUE;
-        for (MetaPattern p : patterns) {
-            int temp = p.getNerCount();
-            if (temp > max) max = temp;
-        }
-        return max;
     }
 }

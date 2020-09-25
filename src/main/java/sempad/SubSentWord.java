@@ -1,53 +1,40 @@
-package cpww;
+package sempad;
 
 import edu.stanford.nlp.ling.IndexedWord;
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-import static cpww.utils.Util.pattern;
-import static cpww.utils.Util.returnLowercaseLemma;
+import static sempad.utils.Util.pattern;
+import static sempad.utils.Util.returnLowercaseLemma;
 
-public class SubSentWords implements Comparable, Serializable {
+@Getter
+public class SubSentWord implements Comparable, Serializable {
     private String word;
     private String lemma;
     private String encoding;
     private int index;
 
-    public SubSentWords(IndexedWord iw, String encode, boolean isEntity, Map<String, String> entityDict) {
+    public SubSentWord(IndexedWord iw, String encode, boolean isEntity, Map<String, String> entityDict) {
         setWordAndLemma(iw, entityDict, isEntity);
         this.encoding = encode;
         this.index = iw.index();
     }
 
-    public SubSentWords(String word, String lemma, String encoding, int index) {
+    public SubSentWord(String word, String lemma, String encoding, int index) {
         this.word = word;
         this.lemma = lemma;
         this.encoding = encoding;
         this.index = index;
     }
 
-    public SubSentWords(SubSentWords subSentWords) {
-        this.word = subSentWords.getOriginalWord();
-        this.lemma = subSentWords.getLemma();
-        this.encoding = subSentWords.getEncoding();
-        this.index = subSentWords.getIndex();
-    }
-
-    public String getOriginalWord() {
-        return this.word;
-    }
-
-    public String getLemma() {
-        return this.lemma;
-    }
-
-    public int getIndex() {
-        return this.index;
-    }
-
-    public String getEncoding() {
-        return this.encoding;
+    public SubSentWord(SubSentWord subSentWord) {
+        this.word = subSentWord.getWord();
+        this.lemma = subSentWord.getLemma();
+        this.encoding = subSentWord.getEncoding();
+        this.index = subSentWord.getIndex();
     }
 
     public String getTrimmedEncoding() {
@@ -83,7 +70,7 @@ public class SubSentWords implements Comparable, Serializable {
     @Override
     public int compareTo(Object o) {
         Integer i1 = this.index;
-        Integer i2 = ((SubSentWords) o).index;
+        Integer i2 = ((SubSentWord) o).index;
         return i1.compareTo(i2);
     }
 }

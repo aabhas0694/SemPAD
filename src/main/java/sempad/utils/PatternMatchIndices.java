@@ -1,4 +1,4 @@
-package cpww.utils;
+package sempad.utils;
 
 import java.util.List;
 

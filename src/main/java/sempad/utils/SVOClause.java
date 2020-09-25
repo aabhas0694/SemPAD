@@ -1,4 +1,4 @@
-package cpww.utils;
+package sempad.utils;
 
 import edu.stanford.nlp.ling.IndexedWord;
 

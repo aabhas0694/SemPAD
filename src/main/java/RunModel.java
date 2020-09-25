@@ -1,7 +1,7 @@
-import cpww.CPWW;
+import sempad.Sempad;
 
 public class RunModel {
     public static void main(String[] args) {
-        CPWW.call();
+        Sempad.call();
     }
 }

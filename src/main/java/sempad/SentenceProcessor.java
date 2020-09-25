@@ -1,4 +1,4 @@
-package cpww;
+package sempad;
 
 import java.io.Serializable;
 import java.util.List;
@@ -20,15 +20,15 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 
-import static cpww.utils.Util.*;
+import static sempad.utils.Util.*;
 
 public class SentenceProcessor implements Serializable {
     private String sentence;
     private String sentID;
-    private Map<SubSentWords, List<SubSentWords>> sentenceBreakdown = new LinkedHashMap<>();
-    private Map<String, SubSentWords> reverseEncoding = new HashMap<>();
-    private Map<String, SubSentWords> replaceSurfaceName = new HashMap<>();
-    private Map<SubSentWords, List<SubSentWords>> pushedUpSentences = new HashMap<>();
+    private Map<SubSentWord, List<SubSentWord>> sentenceBreakdown = new LinkedHashMap<>();
+    private Map<String, SubSentWord> reverseEncoding = new HashMap<>();
+    private Map<String, SubSentWord> replaceSurfaceName = new HashMap<>();
+    private Map<SubSentWord, List<SubSentWord>> pushedUpSentences = new HashMap<>();
 
     public SentenceProcessor(String text, String sentID) {
         setSentenceAndID(text, sentID);
@@ -116,26 +116,26 @@ public class SentenceProcessor implements Serializable {
     private void generateReverseWordEncoding(Map<IndexedWord, String> encodeTree, Map<String, String> entityDict, String[] nerTypes) {
         for(Map.Entry<IndexedWord, String> entry : encodeTree.entrySet()){
             boolean containsEntity = containsEntity(entry.getKey().word(), nerTypes);
-            SubSentWords word = new SubSentWords(entry.getKey(), entry.getValue(), containsEntity, entityDict);
+            SubSentWord word = new SubSentWord(entry.getKey(), entry.getValue(), containsEntity, entityDict);
             this.reverseEncoding.put(entry.getValue(), word);
         }
     }
 
-    public Map<String, SubSentWords> getReverseWordEncoding() {
+    public Map<String, SubSentWord> getReverseWordEncoding() {
         return this.reverseEncoding;
     }
 
     private void sentenceBreakdown(Map<IndexedWord, String> encodeTree, Map<IndexedWord, TreeSet<IndexedWord>> subTree) {
         for (IndexedWord key : subTree.keySet()) {
-            SubSentWords subRoot = this.reverseEncoding.get(encodeTree.get(key));
+            SubSentWord subRoot = this.reverseEncoding.get(encodeTree.get(key));
             List<IndexedWord> values = sort_topToLeaf(subTree.get(key), encodeTree);
-            TreeSet<SubSentWords> temp = new TreeSet<>();
+            TreeSet<SubSentWord> temp = new TreeSet<>();
             int irregularityCount = 0;
             for (IndexedWord w : values) {
-                SubSentWords tempWord = this.reverseEncoding.get(encodeTree.get(w));
+                SubSentWord tempWord = this.reverseEncoding.get(encodeTree.get(w));
                 String parentEncode = tempWord.getTrimmedEncoding().substring(0, tempWord.getTrimmedEncoding().length() - 1);
                 if (temp.parallelStream().noneMatch(s -> s.getTrimmedEncoding().equals(parentEncode)) && !w.equals(key)) {
-                    SubSentWords modifyWord = new SubSentWords(tempWord);
+                    SubSentWord modifyWord = new SubSentWord(tempWord);
                     modifyWord.setEncoding(subRoot.getTrimmedEncoding() + irregularityCount++ + '_' + tempWord.getEncoding().split("_")[1]);
                     this.reverseEncoding.put(modifyWord.getEncoding(), modifyWord);
                     this.sentenceBreakdown.put(modifyWord, new ArrayList<>(Collections.singletonList(modifyWord)));
@@ -148,7 +148,7 @@ public class SentenceProcessor implements Serializable {
         }
     }
 
-    public Map<SubSentWords, List<SubSentWords>> getSentenceBreakdown() {
+    public Map<SubSentWord, List<SubSentWord>> getSentenceBreakdown() {
         return this.sentenceBreakdown;
     }
 
@@ -157,18 +157,18 @@ public class SentenceProcessor implements Serializable {
         this.sentID = id;
     }
 
-    public void pushUpSentences(SubSentWords encode, List<SubSentWords> value) {
+    public void pushUpSentences(SubSentWord encode, List<SubSentWord> value) {
         this.pushedUpSentences.put(encode, value);
     }
 
-    public Map<SubSentWords, List<SubSentWords>> getPushedUpSentences() {
+    public Map<SubSentWord, List<SubSentWord>> getPushedUpSentences() {
         return this.pushedUpSentences;
     }
 
-    public Map<String, SubSentWords> getReplaceSurfaceName() {
+    public Map<String, SubSentWord> getReplaceSurfaceName() {
         return this.replaceSurfaceName;
     }
-    public void updateReplacedSurfaceName(String key, SubSentWords value) {
+    public void updateReplacedSurfaceName(String key, SubSentWord value) {
         this.replaceSurfaceName.put(key, value);
     }
 
