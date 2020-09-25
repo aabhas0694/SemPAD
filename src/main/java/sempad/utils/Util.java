@@ -245,7 +245,7 @@ public class Util {
     public static List<MetaPattern> returnSortedPatternList(Map<MetaPattern, Integer> patternList) {
         List<MetaPattern> l = new ArrayList<>(patternList.keySet());
         l.sort((o1, o2) ->
-                returnPatternWeight(o2, patternList.get(o2)).compareTo(returnPatternWeight(o1, patternList.get(o1))));
+                returnPatternWeight(o2, o2.getNerCount()).compareTo(returnPatternWeight(o1, o1.getNerCount())));
         return l;
     }
 

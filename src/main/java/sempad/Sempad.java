@@ -287,6 +287,8 @@ public class Sempad {
 
         Set<SubSentWord> potentialPatternWords = new TreeSet<>();
         boolean match_set = false;
+
+        potentialPatternWords.add(sentence.get(entityIndex));
         String currentWordEncoding = sentence.get(entityIndex).getTrimmedEncoding();
         OptionalInt parent = returnEncodeIndex(sentence, currentWordEncoding.substring(0, currentWordEncoding.length()-1));
         if (parent.isPresent()) {
@@ -507,8 +509,7 @@ public class Sempad {
             if (entityCount == 0 || (i == 0 && entityCount < 2)) continue;
             int endIndex = -1, startIndex = subSent.size();
             for (MetaPattern metaPattern : patternList.get(i)) {
-                String patternString = String.join(" ", metaPattern.getSplitPattern());
-                if (i != 0 && (multiCount > 0 || patternString.replaceAll("[_\\-]+", " ").split(" ").length < 3)) break;
+                if (i != 0 && (multiCount > 0 || metaPattern.toString().replaceAll("[_\\-]+", " ").split(" ").length < 3)) break;
                 PatternMatchIndices matchFound = check_subsequence(subSent, true, metaPattern, nerTypes);
                 if (matchFound != null) {
                     int newStart = matchFound.getEntityIndices().get(0), newEnd = matchFound.getEntityIndices().get(matchFound.getEntityIndices().size() - 1);
