@@ -47,7 +47,7 @@ def main(argv):
             f2.write(l)
     f2.close()
     f1.close()
-    os.remove(input_file)
+   # os.remove(input_file)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import sempad.utils.PatternMatchIndices;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import sempad.utils.Util;
 
 import java.io.*;
 import java.util.*;
@@ -197,22 +198,24 @@ public class Sempad {
     }
 
     private static void pattern_classification(List<PatternCandidate> frequentPatterns) {
+        logger.log(Level.INFO, "STARTING: Meta Pattern Classification");
         for (PatternCandidate patternCandidate : frequentPatterns.stream().sorted(
                 Comparator.comparingInt(PatternCandidate::getFrequency).reversed()).collect(Collectors.toList())) {
             classifyAndAddPattern(patternCandidate);
         }
+        logger.log(Level.INFO, "COMPLETED: Meta Pattern Classification");
     }
 
     private static void classifyAndAddPattern(PatternCandidate patternCandidate) {
         MetaPattern metaPattern = patternCandidate.getMetaPattern();
         int nerCount = metaPattern.getNerCount();
         if (nerCount == 1) {
-            singlePattern.put(metaPattern, singlePattern.getOrDefault(metaPattern, 0) + 1);
+            singlePattern.put(metaPattern, singlePattern.getOrDefault(metaPattern, 0) + patternCandidate.getFrequency());
         } else if (nerCount > 1) {
-            multiPattern.put(metaPattern, multiPattern.getOrDefault(metaPattern, 0) + 1);
+            multiPattern.put(metaPattern, multiPattern.getOrDefault(metaPattern, 0) + patternCandidate.getFrequency());
         }
         if (nerCount >= 1) {
-            allPattern.put(metaPattern, allPattern.getOrDefault(metaPattern, 0) + 1);
+            allPattern.put(metaPattern, allPattern.getOrDefault(metaPattern, 0) + patternCandidate.getFrequency());
         }
     }
 
@@ -366,9 +369,9 @@ public class Sempad {
                     sentenceCollector.clear();
                     noOfBatches++;
                 }
+                lineNo++;
             }
             line = reader.readLine();
-            lineNo++;
         }
         reader.close();
 
@@ -428,24 +431,29 @@ public class Sempad {
         return sentenceCollector;
     }
 
-    private static void savePatternClassificationData(int epoch) throws IOException{
+    private static void savePatternClassificationData(int epoch, SavePatternType typeOfSave) throws IOException{
         logger.log(Level.INFO, "STARTING: Saving Meta-Pattern Classification Data");
-        String suffix = "." + noOfLines + "_" + minimumSupport + "_" + epoch + ".txt";
-        FileWriter singlePatterns = new FileWriter(outputFolder + "c_singlePatterns" + suffix);
-        FileWriter multiPatterns = new FileWriter(outputFolder + "c_multiPatterns" + suffix);
-        FileWriter allPatterns = new FileWriter(outputFolder + "c_allPatterns" + suffix);
-        writePatternsToFile(new BufferedWriter(singlePatterns), singlePattern);
-        writePatternsToFile(new BufferedWriter(multiPatterns), multiPattern);
+        String commonSuffix = "." + noOfLines + "_" + minimumSupport;
+        String suffix = (epoch == -1) ? commonSuffix + ".txt" : commonSuffix + "_" + epoch + ".txt";
+        if (typeOfSave == SavePatternType.ALL_THREE) {
+            FileWriter singlePatterns = new FileWriter(outputFolder + (epoch == -1 ? "" : "c_") + "singlePatterns" + suffix);
+            FileWriter multiPatterns = new FileWriter(outputFolder + (epoch == -1 ? "" : "c_") + "multiPatterns" + suffix);
+            writePatternsToFile(new BufferedWriter(singlePatterns), singlePattern);
+            writePatternsToFile(new BufferedWriter(multiPatterns), multiPattern);
+        }
+        FileWriter allPatterns = new FileWriter(outputFolder + (epoch == -1 ? "" : "c_") + "allPatterns" + suffix);
         writePatternsToFile(new BufferedWriter(allPatterns), allPattern);
         logger.log(Level.INFO, "COMPLETED: Saving Meta-Pattern Classification Data");
     }
 
-    private static void loadPatternClassificationData() throws IOException {
-        logger.log(Level.INFO, "STARTING: Meta-Patterns Loading and Classification");
-        String name = "allPatterns";
+    private static List<PatternCandidate> loadPatternData(int epoch) throws IOException {
+        logger.log(Level.INFO, "STARTING: Meta-Patterns Loading");
+        String name = (epoch == -1) ? "allPatterns" : "c_allPatterns";
         String directory = outputFolder;
-        String suffix = "." + noOfLines + "_" + minimumSupport + ".txt";
-        BufferedReader patterns = new BufferedReader(new FileReader(directory + name + suffix));
+        String commonSuffix = "." + noOfLines + "_" + minimumSupport;
+        String suffix = (epoch == -1) ? commonSuffix + ".txt" : commonSuffix + "_" + epoch + ".txt";
+        File file = new File(directory + name + suffix);
+        BufferedReader patterns = new BufferedReader(new FileReader(file));
         String line = patterns.readLine();
         List<PatternCandidate> patternList = new ArrayList<>();
         while (line != null) {
@@ -453,8 +461,13 @@ public class Sempad {
             patternList.add(new PatternCandidate(data[0], nerTypes, stopWords, Integer.parseInt(data[1])));
             line = patterns.readLine();
         }
-        pattern_classification(patternList);
-        logger.log(Level.INFO, "COMPLETED: Meta-Patterns Loading and Classification");
+        patterns.close();
+        logger.log(Level.INFO, "COMPLETED: Meta-Patterns Loading");
+        if (epoch != -1) {
+            // delete temp allPattern file once it has been successfully loaded
+            if (file.delete()) logger.log(Level.INFO, "DELETED: Epoch file " + file.getName());
+        }
+        return patternList;
     }
 
     private static String patternFinding(SentenceProcessor sentence, List<List<MetaPattern>> patternList) throws Exception {
@@ -587,7 +600,7 @@ public class Sempad {
 
                 List<List<MetaPattern>> patternList = new ArrayList<>();
                 if (load_metapatternData) {
-                    loadPatternClassificationData();
+                    pattern_classification(loadPatternData(-1));
                     noOfPushUps = 1;
                 } else {
                     logger.log(Level.INFO, "STARTING: Pattern Distillation");
@@ -611,7 +624,7 @@ public class Sempad {
                 if (noOfPushUps == 0) {
                     throw new IOException("No patterns found.");
                 }
-                savePatternClassificationData(epoch);
+                savePatternClassificationData(epoch, SavePatternType.ALL);
                 patternList.add(returnSortedPatternList(multiPattern));
                 if (includeContext) patternList.add(returnSortedPatternList(singlePattern));
                 savePatternMatchingResults(patternList, epochStart, epochEndExclusive, epoch);
@@ -621,19 +634,23 @@ public class Sempad {
             String suffix = "c_patternOutput." + noOfLines + "_" + minimumSupport + ".txt";
             BufferedWriter bw = new BufferedWriter(new FileWriter(outputFolder + suffix));
 
+            // Aggregating pattern classification data and pattern output data
             for (int epoch = 0; epoch < noOfEpochs; epoch++) {
                 suffix = "c_patternOutput." + noOfLines + "_" + minimumSupport + "_" + epoch + ".txt";
-                File file = new File(outputFolder + suffix);
-                BufferedReader br = new BufferedReader(new FileReader(file));
+                File patternOutputFile = new File(outputFolder + suffix);
+                BufferedReader br = new BufferedReader(new FileReader(patternOutputFile));
                 String line = br.readLine();
                 while (line != null) {
                     bw.write(line + "\n");
                     line = br.readLine();
                 }
+                clearPatterns();
+                pattern_classification(loadPatternData(epoch));
                 br.close();
-//                file.delete();
-//                logger.log(Level.INFO, "DELETED: Epoch file " + file.getName());
+                if (patternOutputFile.delete()) logger.log(Level.INFO, "DELETED: Epoch file " + patternOutputFile.getName());
             }
+
+            savePatternClassificationData(-1, SavePatternType.ALL_THREE);
             bw.close();
             logger.log(Level.INFO, "CREATED: Combined output file from all epochs.");
         } catch (Exception e) {

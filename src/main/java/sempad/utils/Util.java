@@ -17,7 +17,10 @@ public class Util {
     public static final String[] articles = new String[]{"a", "an", "the"};
     public static final String patternRegexFilter = "[`$\\d%'\\.,><\\*/\\(\\)\\[:\\-;_+\\!\\|\"\\\\]+(lrb|lsb|rrb|rsb)*[`$\\d%'\\.,><\\*/\\(\\):\\]\\-;_+\\!\\|\"\\\\]*";
     public static final Pattern pattern = Pattern.compile("[A-Z]+[\\d]+");
-
+    public enum SavePatternType {
+        ALL_THREE,
+        ALL // only allPatterns
+    }
 
     public static int sum(List<Integer> abc){
         int total = 0;
